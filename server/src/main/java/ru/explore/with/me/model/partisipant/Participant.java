@@ -9,6 +9,7 @@ import ru.explore.with.me.model.user.User;
 import ru.explore.with.me.util.ParticipantStatus;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -32,4 +33,7 @@ public class Participant {
 
     @Column(name = "status")
     private ParticipantStatus status;
+
+    @Column(name = "created")
+    private LocalDateTime created;
 }

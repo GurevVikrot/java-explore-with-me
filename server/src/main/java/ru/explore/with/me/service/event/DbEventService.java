@@ -1,9 +1,12 @@
 package ru.explore.with.me.service.event;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.explore.with.me.dto.event.EventFullDto;
-import ru.explore.with.me.dto.event.NewEventDto;
+import ru.explore.with.me.dto.event.EventShortDto;
+import ru.explore.with.me.dto.event.RequestEventDto;
 import ru.explore.with.me.exeption.NotFoundException;
 import ru.explore.with.me.exeption.ValidationException;
 import ru.explore.with.me.mapper.event.EventMapper;
@@ -12,6 +15,7 @@ import ru.explore.with.me.repository.category.CategoryRepository;
 import ru.explore.with.me.repository.event.EventRepository;
 import ru.explore.with.me.repository.user.UserRepository;
 import ru.explore.with.me.util.EventStatus;
+import ru.explore.with.me.util.ParticipantStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,12 +41,28 @@ public class DbEventService implements EventService {
     }
 
     @Override
-    public List<EventFullDto> getUserEvents(long userId, int from, int size) {
-        return eventRepository.findAllByCreator(userId).stream()
-                .map(eventMapper::toEventFullDto)
+    public List<EventShortDto> getUserEvents(long userId, int from, int size) {
+        checkUserExist(userId);
+        Pageable page = PageRequest.of(from/size,size);
+        return eventRepository.findAllByCreator(userId, page).stream()
+                .peek(event -> event.getParticipants().stream()
+                        .filter(participant -> participant.getStatus().equals(ParticipantStatus.CONFIRMED))
+                        .collect(Collectors.toList()))
+                .map(eventMapper::toShortEventDto)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * TODO доделать
+     * @param users
+     * @param states
+     * @param categories
+     * @param rangeStart
+     * @param rangeEnd
+     * @param from
+     * @param size
+     * @return
+     */
     @Override
     public List<EventFullDto> getEventsToAdmin(
             List<Long> users,
@@ -72,25 +92,105 @@ public class DbEventService implements EventService {
      * Время начала события должно быть позже его создания на 2 часа, выбрасывется исключение.
      * Если пользователя или категории не существует, выбрасывается исключение.
      * @param userId Id пользователя
-     * @param newEventDto Dto объект события.
+     * @param requestEventDto Dto объект события.
      * @return EventFullDto or NotFoundException or ValidationException
      */
     @Override
-    public EventFullDto createEvent(long userId, NewEventDto newEventDto) {
-        if (newEventDto.getEventDate().isBefore(newEventDto.getEventDate().plusHours(2))) {
-            throw new ValidationException("Время начала события должно быть на 2 часа позже момента его создания");
-        }
+    public EventFullDto createEvent(long userId, RequestEventDto requestEventDto) {
+        checkEventDate(requestEventDto);
 
-        Event event = eventMapper.toNewEvent(newEventDto);
+        Event event = eventMapper.toNewEvent(requestEventDto);
 
         event.setCreator(userRepository.findById(userId).orElseThrow(
                 () -> new NotFoundException("Пользователь не найден")));
-        event.setCategories(categoryRepository.findById(newEventDto.getCategory()).orElseThrow(
+        event.setCategory(categoryRepository.findById(requestEventDto.getCategory()).orElseThrow(
                 () -> new NotFoundException("Категория не найдена")));
-        if (newEventDto.getParticipantLimit() == 0 || newEventDto.getRequestModeration() == null) {
+        if (requestEventDto.getParticipantLimit() == 0 || requestEventDto.getRequestModeration() == null) {
             event.setRequestModeration(false);
         }
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
+    }
+
+    /**
+     * TODO доделать
+     * @param userId
+     * @param requestEventDto
+     * @return
+     */
+    @Override
+    public EventFullDto updateEvent(long userId, RequestEventDto requestEventDto) {
+        checkUserExist(userId);
+        checkEventDate(requestEventDto);
+
+        Event eventFromDb = eventRepository.findById(requestEventDto.getEventId()).orElseThrow(
+                () -> new NotFoundException("События не существует. Обновление не возможно"));
+
+        if (!eventFromDb.getStatus().equals(EventStatus.WAITING) || !eventFromDb.getStatus().equals(EventStatus.CANCELED)) {
+            throw new ValidationException("Only pending or canceled events can be changed");
+        }
+
+        eventFromDb.setTitle(requestEventDto.getTitle().trim());
+        eventFromDb.setAnnotation(requestEventDto.getAnnotation().trim());
+        eventFromDb.setDescription(requestEventDto.getDescription().trim());
+        eventFromDb.setCategory(categoryRepository.findById(requestEventDto.getCategory()).orElseThrow(
+                () -> new NotFoundException("Category not found")));
+        eventFromDb.setEventDate(requestEventDto.getEventDate());
+
+        if (requestEventDto.getPaid() != null) {
+            eventFromDb.setPaid(requestEventDto.getPaid());
+        }
+
+        eventFromDb.setParticipantLimit(requestEventDto.getParticipantLimit());
+
+        if (requestEventDto.getParticipantLimit() == 0 || requestEventDto.getRequestModeration() == null) {
+            eventFromDb.setRequestModeration(false);
+        } else {
+            eventFromDb.setRequestModeration(requestEventDto.getRequestModeration());
+        }
+
+        eventFromDb.setStatus(EventStatus.WAITING);
+
+        return eventMapper.toEventFullDto(eventRepository.save(eventFromDb));
+    }
+
+    @Override
+    public EventFullDto getEventByCreator(long userId, long eventId) {
+        checkUserExist(userId);
+
+        EventFullDto event = getEvent(eventId);
+
+        if (event.getInitiator().getId() != userId) {
+            throw new ValidationException("Событие принадлежит другому пользователю");
+        }
+
+        return event;
+    }
+
+    @Override
+    public EventFullDto cancelEventByCreator(long userId, long eventId) {
+        checkUserExist(userId);
+
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("События не сущесвует"));
+
+        if (event.getStatus().equals(EventStatus.WAITING)) {
+            event.setStatus(EventStatus.CANCELED);
+            return eventMapper.toEventFullDto(eventRepository.save(event));
+        }
+
+        throw new ValidationException("Возможно отменить событие только ожидающее подтверждения модератором");
+    }
+
+    private void checkEventDate(RequestEventDto requestEventDto) {
+        if (requestEventDto.getEventDate().isBefore(requestEventDto.getEventDate().plusHours(2))) {
+            throw new ValidationException("Время начала события должно быть на 2 часа позже момента его создания");
+        }
+    }
+
+    private void checkUserExist(long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ValidationException("Пользователя не существует");
+        }
     }
 }

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.explore.with.me.model.category.Category;
+import ru.explore.with.me.model.partisipant.Participant;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.model.user.User;
 
@@ -47,14 +48,14 @@ public class Event {
 
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "id")
-    private Category categories;
+    private Category category;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "participants",
-            joinColumns = @JoinColumn(name = "event_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id"))
-    private List<User> participants;
+    @OneToMany(mappedBy = "event")
+//    @JoinTable(
+//            name = "participants",
+//            joinColumns = @JoinColumn(name = "event_id"),
+//            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private List<Participant> participants;
 
     @Column(name = "participantLimit")
     private int participantLimit;

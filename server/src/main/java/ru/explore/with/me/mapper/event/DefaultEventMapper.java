@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.dto.event.EventFullDto;
 import ru.explore.with.me.dto.event.EventShortDto;
-import ru.explore.with.me.dto.event.NewEventDto;
+import ru.explore.with.me.dto.event.RequestEventDto;
 import ru.explore.with.me.mapper.category.CategoryMapper;
 import ru.explore.with.me.mapper.user.UserMapper;
 import ru.explore.with.me.model.event.Event;
@@ -12,7 +12,6 @@ import ru.explore.with.me.util.EventStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class DefaultEventMapper implements EventMapper{
@@ -25,9 +24,24 @@ public class DefaultEventMapper implements EventMapper{
         this.categoryMapper = categoryMapper;
     }
 
+    /**
+     * Преобразование Event в EventShortDto
+     * Заполнение поля views требуется в сервисах, использующих класс.
+     * @param event объект события
+     * @return EventShortDto
+     */
     @Override
     public EventShortDto toShortEventDto(Event event) {
-        return new EventShortDto();
+        return new EventShortDto(
+                event.getId(),
+                event.getTitle(),
+                event.getAnnotation(),
+                categoryMapper.toCategoryDto(event.getCategory()),
+                userMapper.toUserShortDto(event.getCreator()),
+                event.isPaid(),
+                event.getParticipants().size(),
+                event.getEventDate(),
+                0);
     }
 
     @Override
@@ -47,8 +61,7 @@ public class DefaultEventMapper implements EventMapper{
                 eventFullDto.isRequestModeration(),
                 null,
                 null,
-                null
-                );
+                null);
     }
 
     @Override
@@ -62,31 +75,30 @@ public class DefaultEventMapper implements EventMapper{
                 event.getEventDate(),
                 event.getCreated(),
                 event.getPublishedOn(),
-                categoryMapper.toCategoryDto(event.getCategories()),
+                categoryMapper.toCategoryDto(event.getCategory()),
                 event.isPaid(),
                 event.getCost(),
                 event.getParticipants().size(),
                 event.getParticipantLimit(),
                 event.isRequestModeration(),
                 event.getStatus(),
-                0
-                );
+                0);
     }
 
     @Override
-    public Event toNewEvent(NewEventDto newEventDto) {
+    public Event toNewEvent(RequestEventDto requestEventDto) {
         return new Event(null,
-                newEventDto.getTitle().trim(),
-                newEventDto.getAnnotation().trim(),
-                newEventDto.getDescription().trim(),
+                requestEventDto.getTitle().trim(),
+                requestEventDto.getAnnotation().trim(),
+                requestEventDto.getDescription().trim(),
                 null,
-                newEventDto.getEventDate(),
-                newEventDto.isPaid(),
+                requestEventDto.getEventDate(),
+                requestEventDto.getPaid() != null && requestEventDto.getPaid(),
                 0,
                 null,
                 List.of(),
-                newEventDto.getParticipantLimit(),
-                newEventDto.getRequestModeration(),
+                requestEventDto.getParticipantLimit(),
+                requestEventDto.getRequestModeration(),
                 EventStatus.WAITING,
                 LocalDateTime.now(),
                 null);

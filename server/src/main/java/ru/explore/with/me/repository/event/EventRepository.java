@@ -1,5 +1,6 @@
 package ru.explore.with.me.repository.event;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.util.EventStatus;
@@ -17,8 +18,8 @@ public class EventRepository {
        return eventDAO.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
-    public List<Event> findAllByCreator(long userId) {
-        return jpaRepository.findAllByCreator(userId);
+    public List<Event> findAllByCreator(long userId, Pageable pageable) {
+        return jpaRepository.findAllByCreator(userId, pageable);
     }
 
     public List<Event> findAllById(List<Long> events) {

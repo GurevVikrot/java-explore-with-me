@@ -1,18 +1,23 @@
 package ru.explore.with.me.dto.event;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 
+/**
+ * Dto класс события с валидацией полей. Используется при создании новых событий и обновлении.
+ * В Случае создания необходимо отдельно валидировать поля eventId и requestModeration.
+ * В Случае обновления необходимо отдельно валидировать поле eventId
+ */
 @Getter
 @Setter
 @AllArgsConstructor
 @NotNull
-public class NewEventDto {
+public class RequestEventDto {
+    private long eventId;
     @NotBlank
     @Size(min = 3, max = 120)
     private String title;
@@ -25,7 +30,7 @@ public class NewEventDto {
     @Positive
     private int category;
     private LocalDateTime eventDate;
-    private boolean paid;
+    private Boolean paid;
     @PositiveOrZero
     private int participantLimit;
     private Boolean requestModeration;
