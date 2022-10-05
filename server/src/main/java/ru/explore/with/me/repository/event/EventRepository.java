@@ -33,4 +33,8 @@ public class EventRepository {
     public Event save(Event event) {
         return jpaRepository.save(event);
     }
+
+    public boolean existById(long eventId) {
+        return jpaRepository.existsById(eventId);
+    }
 }

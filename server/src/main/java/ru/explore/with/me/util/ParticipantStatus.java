@@ -1,6 +1,7 @@
 package ru.explore.with.me.util;
 
 public enum ParticipantStatus {
-    WAITING,
-    CONFIRMED
+    PENDING,
+    CONFIRMED,
+    REJECTED
 }

@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.explore.with.me.model.category.Category;
-import ru.explore.with.me.model.partisipant.Participant;
+import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.model.user.User;
 
@@ -55,7 +55,7 @@ public class Event {
 //            name = "participants",
 //            joinColumns = @JoinColumn(name = "event_id"),
 //            inverseJoinColumns = @JoinColumn(name = "user_id"))
-    private List<Participant> participants;
+    private List<Participation> participations;
 
     @Column(name = "participantLimit")
     private int participantLimit;

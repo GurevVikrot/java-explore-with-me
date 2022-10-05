@@ -45,7 +45,7 @@ public class DbEventService implements EventService {
         checkUserExist(userId);
         Pageable page = PageRequest.of(from/size,size);
         return eventRepository.findAllByCreator(userId, page).stream()
-                .peek(event -> event.getParticipants().stream()
+                .peek(event -> event.getParticipations().stream()
                         .filter(participant -> participant.getStatus().equals(ParticipantStatus.CONFIRMED))
                         .collect(Collectors.toList()))
                 .map(eventMapper::toShortEventDto)

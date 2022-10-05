@@ -1,4 +1,4 @@
-package ru.explore.with.me.model.partisipant;
+package ru.explore.with.me.model.participation;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

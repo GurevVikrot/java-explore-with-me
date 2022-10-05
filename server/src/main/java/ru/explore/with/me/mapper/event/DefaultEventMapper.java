@@ -39,7 +39,7 @@ public class DefaultEventMapper implements EventMapper{
                 categoryMapper.toCategoryDto(event.getCategory()),
                 userMapper.toUserShortDto(event.getCreator()),
                 event.isPaid(),
-                event.getParticipants().size(),
+                event.getParticipations().size(),
                 event.getEventDate(),
                 0);
     }
@@ -78,7 +78,7 @@ public class DefaultEventMapper implements EventMapper{
                 categoryMapper.toCategoryDto(event.getCategory()),
                 event.isPaid(),
                 event.getCost(),
-                event.getParticipants().size(),
+                event.getParticipations().size(),
                 event.getParticipantLimit(),
                 event.isRequestModeration(),
                 event.getStatus(),

@@ -1,4 +1,4 @@
-package ru.explore.with.me.model.partisipant;
+package ru.explore.with.me.model.participation;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,17 +17,21 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "participants")
-public class Participant {
-    @EmbeddedId
-    private ParticipantId participantId;
+public class Participation {
+//    @EmbeddedId
+//    private ParticipantId participantId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
     @ManyToOne
-    @MapsId("userId")
+    //@MapsId("userId")
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
     @ManyToOne
-    @MapsId("eventId")
+   // @MapsId("eventId")
     @JoinColumn(name = "event_id", referencedColumnName = "id")
     private Event event;
 
