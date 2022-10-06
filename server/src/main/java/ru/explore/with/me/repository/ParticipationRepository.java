@@ -2,7 +2,6 @@ package ru.explore.with.me.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import ru.explore.with.me.dto.participation.ParticipationRequestDto;
 import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.util.ParticipantStatus;
 
@@ -20,7 +19,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 
     List<Participation> findAllByUserId(long userId);
 
-    boolean existByUserIdAndEventId(long userId, long eventId);
+    boolean existsByUserIdAndEventId(long userId, long eventId);
 
     int getSumByEventIdAndStatusIs(Long eventId, ParticipantStatus status);
 }

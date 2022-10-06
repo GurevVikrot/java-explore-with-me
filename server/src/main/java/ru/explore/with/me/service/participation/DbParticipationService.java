@@ -128,7 +128,7 @@ public class DbParticipationService implements ParticipationService {
      */
     @Override
     public ParticipationRequestDto newParticipation(long userId, long eventId) {
-        if (participationRepository.existByUserIdAndEventId(userId, eventId)) {
+        if (participationRepository.existsByUserIdAndEventId(userId, eventId)) {
             throw new ValidationException("Заявка на участие уже сущесвтует");
         }
 

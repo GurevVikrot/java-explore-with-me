@@ -64,7 +64,7 @@ public class DbUserService implements UserService {
                     .map(userMapper::toUserDto)
                     .collect(Collectors.toList());
         } else {
-            return userRepository.findAllWhereIdIn(ids, pageable).stream()
+            return userRepository.findAllByIdIn(ids, pageable).stream()
                     .map(userMapper::toUserDto)
                     .collect(Collectors.toList());
         }

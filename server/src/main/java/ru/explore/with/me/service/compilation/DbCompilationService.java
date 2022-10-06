@@ -3,6 +3,7 @@ package ru.explore.with.me.service.compilation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 import ru.explore.with.me.dto.compilation.CompilationDto;
 import ru.explore.with.me.dto.compilation.NewCompilationDto;
 import ru.explore.with.me.exeption.NotFoundException;
@@ -17,6 +18,7 @@ import ru.explore.with.me.repository.event.EventRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
 public class DbCompilationService implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final CompilationMapper compilationMapper;
@@ -155,7 +157,7 @@ public class DbCompilationService implements CompilationService {
         if (pinned == null) {
             compilations = compilationRepository.findAll(page).toList();
         } else {
-            compilations = compilationRepository.findAllWherePinnedIs(pinned, page);
+            compilations = compilationRepository.findAllByPinnedIs(pinned, page);
         }
 
         return compilations.stream()

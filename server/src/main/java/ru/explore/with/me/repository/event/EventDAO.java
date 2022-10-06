@@ -55,29 +55,30 @@ public class EventDAO {
         sql.append(") as events_select");
         sql.append(" INNER JOIN users ON events_select.creator = users.id");
 
-        return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> eventFromDb(rs), categories);
+        return null;
+        //return jdbcTemplate.query(sql.toString(), (rs, rowNum) -> eventFromDb(rs), categories);
     }
 
-    private Event eventFromDb(ResultSet rs) throws SQLException {
-        Event event = new Event(
-                rs.getLong("events.id"),
-                rs.getString("events.title"),
-                rs.getString("events.annotation"),
-                rs.getString("events.description"),
-                new User(
-                        rs.getLong("users.id"),
-                        rs.getString("users.email"),
-                        rs.getString("users.name"),
-                        rs.getTimestamp("users.created").toLocalDateTime(),
-                        rs.getDate("users.birthday").toLocalDate()),
-                rs.getTimestamp("events.eventDate").toLocalDateTime(),
-                rs.getBoolean("paid"),
-                rs.getInt("cost"),
-                null,
-                rs.getInt("participantsLimit"),
-                rs.getBoolean("requestModeration"),
-                rs.getObject("state", EventStatus.class)
-        );
-        return event;
-    }
+//    private Event eventFromDb(ResultSet rs) throws SQLException {
+//        Event event = new Event(
+//                rs.getLong("events.id"),
+//                rs.getString("events.title"),
+//                rs.getString("events.annotation"),
+//                rs.getString("events.description"),
+//                new User(
+//                        rs.getLong("users.id"),
+//                        rs.getString("users.email"),
+//                        rs.getString("users.name"),
+//                        rs.getTimestamp("users.created").toLocalDateTime(),
+//                        rs.getDate("users.birthday").toLocalDate()),
+//                rs.getTimestamp("events.eventDate").toLocalDateTime(),
+//                rs.getBoolean("paid"),
+//                rs.getInt("cost"),
+//                null,
+//                rs.getInt("participantsLimit"),
+//                rs.getBoolean("requestModeration"),
+//                rs.getObject("state", EventStatus.class)
+//        );
+//        return event;
+//    }
 }

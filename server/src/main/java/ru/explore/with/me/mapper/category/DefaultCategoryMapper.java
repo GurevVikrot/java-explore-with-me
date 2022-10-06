@@ -9,7 +9,7 @@ public class DefaultCategoryMapper implements CategoryMapper {
 
     @Override
     public Category toCategory(CategoryDto categoryDto) {
-        return new Category(null, categoryDto.getName(), null);
+        return new Category(categoryDto.getId() == 0? null : categoryDto.getId(), categoryDto.getName().trim(), null);
     }
 
     @Override

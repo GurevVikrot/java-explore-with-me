@@ -14,5 +14,5 @@ public interface CompilationRepository extends JpaRepository<Compilation, Long> 
      * @param page Параметр пагинации
      * @return List<Compilation> Список подборок
      */
-    List<Compilation> findAllWherePinnedIs(Boolean pinned, Pageable page);
+    List<Compilation> findAllByPinnedIs(Boolean pinned, Pageable page);
 }

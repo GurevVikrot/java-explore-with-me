@@ -84,13 +84,13 @@ public class AdminController {
 
     @PostMapping("/categories")
     public CategoryDto createCategory(@RequestBody @Valid CategoryDto categoryDto) {
-        log.info("Запрос на создание категории: {}", categoryDto);
+        log.info("Запрос на создание категории: {}", categoryDto.toString());
         return categoryService.createCategory(categoryDto);
     }
 
     @PatchMapping("/categories")
     public CategoryDto updateCategory(@RequestBody @Valid CategoryDto categoryDto) {
-        log.info("Запрос на обновление категории: {}", categoryDto);
+        log.info("Запрос на обновление категории: {}", categoryDto.toString());
         return categoryService.updateCategory(categoryDto);
     }
 

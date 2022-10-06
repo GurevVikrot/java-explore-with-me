@@ -54,7 +54,7 @@ public class PublicController {
             @RequestParam String sort,
             @RequestParam int from,
             @RequestParam int size) {
-        eventClient.sendStatistic();
+        //eventClient.sendStatistic();
         return null;
     }
 
@@ -67,7 +67,7 @@ public class PublicController {
     @GetMapping("/events/{id}")
     public EventFullDto getEventById(@PathVariable @Positive long id) {
         log.info("Публичный запрос на получение события id = {}", id);
-        eventClient.sendStatistic();
+       // eventClient.sendStatistic();
         return eventService.getEvent(id);
     }
 
