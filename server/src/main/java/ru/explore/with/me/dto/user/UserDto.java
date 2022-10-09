@@ -2,6 +2,7 @@ package ru.explore.with.me.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Table;
 
@@ -15,6 +16,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
+@NotNull
 public class UserDto {
     private long id;
     @Email

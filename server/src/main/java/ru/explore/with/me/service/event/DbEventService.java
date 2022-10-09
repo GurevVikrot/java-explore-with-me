@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.explore.with.me.client.event.EventClient;
 import ru.explore.with.me.dto.event.EventFullDto;
 import ru.explore.with.me.dto.event.EventShortDto;
 import ru.explore.with.me.dto.event.RequestEventDto;
@@ -17,8 +18,10 @@ import ru.explore.with.me.repository.user.UserRepository;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.ParticipantStatus;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,16 +31,19 @@ public class DbEventService implements EventService {
 
     private final CategoryRepository categoryRepository;
     private final EventMapper eventMapper;
+    private final EventClient eventClient;
 
     @Autowired
     public DbEventService(EventRepository eventRepository,
                           UserRepository userRepository,
                           CategoryRepository categoryRepository,
-                          EventMapper eventMapper) {
+                          EventMapper eventMapper,
+                          EventClient eventClient) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.eventMapper = eventMapper;
+        this.eventClient = eventClient;
     }
 
     @Override
@@ -78,11 +84,17 @@ public class DbEventService implements EventService {
 
     /**
      * Получение события по eго идентификатору. В Случае отсутвия события выбрасывается исключение.
-     * @param id Id События
+     *
+     * @param id      Id События
+     * @param request
      * @return EventFullDto or NotFoundException
      */
     @Override
-    public EventFullDto getEvent(long id) {
+    public EventFullDto getEvent(long id, HttpServletRequest request) {
+        if (request != null) {
+            eventClient.sendStatistic(request);
+        }
+
         return eventMapper.toEventFullDto(eventRepository.findById(id).orElseThrow(
                 () -> new NotFoundException("Событие не найдено")));
     }
@@ -158,7 +170,7 @@ public class DbEventService implements EventService {
     public EventFullDto getEventByCreator(long userId, long eventId) {
         checkUserExist(userId);
 
-        EventFullDto event = getEvent(eventId);
+        EventFullDto event = getEvent(eventId, null);
 
         if (event.getInitiator().getId() != userId) {
             throw new ValidationException("Событие принадлежит другому пользователю");
@@ -180,6 +192,12 @@ public class DbEventService implements EventService {
         }
 
         throw new ValidationException("Возможно отменить событие только ожидающее подтверждения модератором");
+    }
+
+    @Override
+    public List<EventShortDto> getPublicEvents(String text, Set<Integer> categories, boolean paid, String rangeStart, String rangeEnd, boolean onlyAvailable, String sort, int from, int size, HttpServletRequest request) {
+        eventClient.sendStatistic(request);
+        return null;
     }
 
     private void checkEventDate(RequestEventDto requestEventDto) {

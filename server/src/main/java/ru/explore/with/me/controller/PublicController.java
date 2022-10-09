@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.explore.with.me.client.EventClient;
+import ru.explore.with.me.client.event.EventClient;
 import ru.explore.with.me.dto.category.CategoryDto;
 import ru.explore.with.me.dto.compilation.CompilationDto;
 import ru.explore.with.me.dto.event.EventFullDto;
@@ -16,6 +16,7 @@ import ru.explore.with.me.service.category.CategoryService;
 import ru.explore.with.me.service.compilation.CompilationService;
 import ru.explore.with.me.service.event.EventService;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
@@ -53,9 +54,9 @@ public class PublicController {
             @RequestParam(required = false, defaultValue = "false") boolean onlyAvailable,
             @RequestParam String sort,
             @RequestParam int from,
-            @RequestParam int size) {
-        //eventClient.sendStatistic();
-        return null;
+            @RequestParam int size,
+            HttpServletRequest request) {
+        return eventService.getPublicEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, request);
     }
 
     /**
@@ -65,10 +66,10 @@ public class PublicController {
      * @return EventFullDto
      */
     @GetMapping("/events/{id}")
-    public EventFullDto getEventById(@PathVariable @Positive long id) {
+    public EventFullDto getEventById(@PathVariable @Positive long id,
+                                     HttpServletRequest request) {
         log.info("Публичный запрос на получение события id = {}", id);
-       // eventClient.sendStatistic();
-        return eventService.getEvent(id);
+        return eventService.getEvent(id, request);
     }
 
     @GetMapping("/compilations")
