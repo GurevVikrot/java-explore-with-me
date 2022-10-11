@@ -1,5 +1,6 @@
 package ru.explore.with.me.repository.event;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.model.event.Event;
@@ -13,6 +14,12 @@ import java.util.Optional;
 public class EventRepository {
     private EventJpaRepository jpaRepository;
     private EventDAO eventDAO;
+
+    @Autowired
+    public EventRepository(EventJpaRepository jpaRepository, EventDAO eventDAO) {
+        this.jpaRepository = jpaRepository;
+        this.eventDAO = eventDAO;
+    }
 
     public List<Event> findAllToAdmin(List<Long> users, List<EventStatus> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
        return eventDAO.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);

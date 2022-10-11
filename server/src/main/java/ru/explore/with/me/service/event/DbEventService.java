@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 public class DbEventService implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
-
     private final CategoryRepository categoryRepository;
     private final EventMapper eventMapper;
     private final EventClient eventClient;
@@ -201,7 +200,7 @@ public class DbEventService implements EventService {
     }
 
     private void checkEventDate(RequestEventDto requestEventDto) {
-        if (requestEventDto.getEventDate().isBefore(requestEventDto.getEventDate().plusHours(2))) {
+        if (requestEventDto.getEventDate().plusHours(2).isBefore(requestEventDto.getEventDate())) {
             throw new ValidationException("Время начала события должно быть на 2 часа позже момента его создания");
         }
     }

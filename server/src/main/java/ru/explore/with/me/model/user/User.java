@@ -30,8 +30,5 @@ public class User {
 
     @Column(name = "created", nullable = false)
     private LocalDateTime created;
-
-    @Column(name = "birthday")
-    private LocalDate birthday;
 }
 

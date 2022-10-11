@@ -77,7 +77,7 @@ public class BaseClient {
         HttpEntity<T> requestEntity = new HttpEntity<>(body);
 
         ResponseEntity<Object> serverResponse;
-
+        // тут поломка при сохранении статистики
         try {
             if (parameters != null) {
                 serverResponse = rest.exchange(path, method, requestEntity, Object.class, parameters);
@@ -92,6 +92,7 @@ public class BaseClient {
 
     private static ResponseEntity<Object> prepareGatewayResponse(ResponseEntity<Object> response) {
         if (response.getStatusCode().is2xxSuccessful()) {
+            log.info("Запрос к сервису статистики успешен");
             return response;
         }
 
@@ -101,6 +102,7 @@ public class BaseClient {
             return responseBuilder.body(response.getBody());
         }
 
-        return responseBuilder.build();
+        log.error("Ошибка запроса к сервису статистики {}", responseBuilder.build());
+        return null;
     }
 }

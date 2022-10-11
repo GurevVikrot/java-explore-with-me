@@ -1,9 +1,6 @@
 package ru.explore.with.me.dto.compilation;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
@@ -15,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @NotNull
+@ToString
 public class NewCompilationDto {
     @NotBlank
     private String title;

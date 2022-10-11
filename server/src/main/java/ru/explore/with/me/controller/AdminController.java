@@ -47,18 +47,21 @@ public class AdminController {
             @RequestParam(required = false) List<Long> ids,
             @RequestParam(required = false, defaultValue = "0") @PositiveOrZero int from,
             @RequestParam(required = false, defaultValue = "10") @Positive int size) {
+        log.info("Запрос на получение всех пользователей");
         return userService.getUsers(ids, from, size);
     }
 
     @PostMapping("/users")
     public UserDto createUser(
             @RequestBody @Valid UserDto userDto) {
+        log.info("Запрос создание пользователя {}", userDto.toString());
         return userService.createUser(userDto);
     }
 
     @DeleteMapping("/users/{userId}")
     public String deleteUser(
             @PathVariable @Positive long userId) {
+        log.info("Запрос на удаление пользователя id = {}", userId);
         return userService.deleteUser(userId);
     }
 
@@ -101,7 +104,7 @@ public class AdminController {
     }
 
     @PostMapping("/compilations")
-    public CompilationDto createCompilation(NewCompilationDto compilationDto) {
+    public CompilationDto createCompilation(@RequestBody @Valid NewCompilationDto compilationDto) {
         log.info("Запрос на создание подборки: {}", compilationDto);
         return compilationService.createCompilation(compilationDto);
     }

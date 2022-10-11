@@ -2,6 +2,7 @@ package ru.explore.with.me.dto.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import ru.explore.with.me.dto.category.CategoryDto;
 import ru.explore.with.me.dto.user.UserDto;
@@ -13,6 +14,7 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class EventShortDto {
     private long id;
     private String title;

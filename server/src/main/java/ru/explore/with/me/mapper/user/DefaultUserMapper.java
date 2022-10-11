@@ -13,8 +13,7 @@ public class DefaultUserMapper implements UserMapper {
                 userDto.getId() == 0 ? null : userDto.getId(),
                 userDto.getEmail(),
                 userDto.getName(),
-                null,
-                userDto.getBirthday()
+                null
         );
     }
 
@@ -24,8 +23,7 @@ public class DefaultUserMapper implements UserMapper {
                 user.getId(),
                 user.getEmail(),
                 user.getName(),
-                user.getCreated(),
-                user.getBirthday()
+                user.getCreated()
         );
     }
 

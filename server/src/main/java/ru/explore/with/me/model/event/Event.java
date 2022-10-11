@@ -18,6 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(name = "events")
 public class Event {
     @Id
     @Column(name = "id")
@@ -51,10 +52,6 @@ public class Event {
     private Category category;
 
     @OneToMany(mappedBy = "event")
-//    @JoinTable(
-//            name = "participants",
-//            joinColumns = @JoinColumn(name = "event_id"),
-//            inverseJoinColumns = @JoinColumn(name = "user_id"))
     private List<Participation> participations;
 
     @Column(name = "participantLimit")
@@ -70,6 +67,6 @@ public class Event {
     @Column(name = "created", nullable = false)
     private LocalDateTime created;
 
-    @Column(name = "published", nullable = false)
+    @Column(name = "published")
     private LocalDateTime publishedOn;
 }

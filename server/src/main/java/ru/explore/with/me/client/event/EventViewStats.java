@@ -12,5 +12,5 @@ import lombok.Setter;
 public class EventViewStats {
     private String app;
     private String uri;
-    private long hits;
+    private int hits;
 }

@@ -1,9 +1,6 @@
 package ru.explore.with.me.dto.user;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.Table;
 
 import javax.persistence.Entity;
@@ -17,6 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @NotNull
 public class UserDto {
     private long id;
@@ -27,5 +25,4 @@ public class UserDto {
     @NotNull
     private String name;
     private LocalDateTime created;
-    private LocalDate birthday;
 }
