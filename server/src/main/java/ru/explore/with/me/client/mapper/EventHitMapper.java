@@ -32,6 +32,7 @@ public class EventHitMapper {
             }
         }
 
+        log.error("При запросе статистики возвращени null. Маппер вернул 0 просмотров");
         return new EventViewStats("", "", 0);
     }
 }

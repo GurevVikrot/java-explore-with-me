@@ -1,9 +1,11 @@
 package ru.explore.with.me.statistic.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.explore.with.me.statistic.dto.EndpointHitDto;
 import ru.explore.with.me.statistic.dto.ViewStatsDto;
+import ru.explore.with.me.statistic.exception.StatisticError;
 import ru.explore.with.me.statistic.mapper.EndpointHitMapper;
 import ru.explore.with.me.statistic.model.EndpointHit;
 import ru.explore.with.me.statistic.repository.StatisticDao;
@@ -14,6 +16,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,10 +33,10 @@ public class DbStatisticService implements StatisticService{
     }
 
     @Override
-    public String saveStatistic(EndpointHitDto endpointHitDto) {
+    public Map<String, String> saveStatistic(EndpointHitDto endpointHitDto) {
         EndpointHit endpointHit = mapper.toEndpointHit(endpointHitDto);
         repository.save(endpointHit);
-        return "Информация сохранена";
+        return Map.of("Stat info:", "Информация сохранена");
     }
 
     @Override

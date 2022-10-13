@@ -25,4 +25,10 @@ public interface EventService {
     EventFullDto cancelEventByCreator(long userId, long eventId);
 
     List<EventShortDto> getPublicEvents(String text, Set<Integer> categories, boolean paid, String rangeStart, String rangeEnd, boolean onlyAvailable, String sort, int from, int size, HttpServletRequest request);
+
+    EventFullDto editEventByAdmin(RequestEventDto eventDto, long eventId);
+
+    EventFullDto publishEvent(long eventId);
+
+    EventFullDto rejectEvent(long eventId);
 }

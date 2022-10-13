@@ -8,7 +8,7 @@ import ru.explore.with.me.mapper.participation.ParticipationMapper;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.model.user.User;
-import ru.explore.with.me.repository.ParticipationRepository;
+import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.repository.event.EventRepository;
 import ru.explore.with.me.repository.user.UserRepository;
 import ru.explore.with.me.util.EventStatus;

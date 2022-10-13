@@ -38,7 +38,7 @@ public class Event {
     @JoinColumn(name = "creator", referencedColumnName = "id")
     private User creator;
 
-    @Column(name = "eventDate", nullable = false)
+    @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
 
     @Column(name = "paid", nullable = false)
@@ -51,13 +51,13 @@ public class Event {
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     private Category category;
 
-    @OneToMany(mappedBy = "event")
+    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
     private List<Participation> participations;
 
-    @Column(name = "participantLimit")
+    @Column(name = "participant_limit")
     private int participantLimit;
 
-    @Column(name = "requestModeration", nullable = false)
+    @Column(name = "request_moderation", nullable = false)
     private boolean requestModeration;
 
     @Enumerated(EnumType.STRING)

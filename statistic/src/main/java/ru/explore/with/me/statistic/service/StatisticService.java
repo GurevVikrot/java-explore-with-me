@@ -4,9 +4,10 @@ import ru.explore.with.me.statistic.dto.EndpointHitDto;
 import ru.explore.with.me.statistic.dto.ViewStatsDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface StatisticService {
-    String saveStatistic(EndpointHitDto endpointHitDto);
+    Map<String, String> saveStatistic(EndpointHitDto endpointHitDto);
 
     List<ViewStatsDto> getStatistic(String start, String end, List<String> uris, boolean unique);
 }

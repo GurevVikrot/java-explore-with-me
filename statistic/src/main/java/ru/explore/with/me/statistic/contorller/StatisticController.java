@@ -11,6 +11,7 @@ import ru.explore.with.me.statistic.service.StatisticService;
 import javax.validation.Valid;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Slf4j
@@ -25,7 +26,7 @@ public class StatisticController {
     }
 
     @PostMapping("/hit")
-    public String hitEndpoint(@RequestBody @Valid EndpointHitDto endpointHitDto) {
+    public Map<String, String> hitEndpoint(@RequestBody @Valid EndpointHitDto endpointHitDto) {
         log.info("Получена статистике для сохранения: {}", endpointHitDto);
         return statisticService.saveStatistic(endpointHitDto);
     }

@@ -14,6 +14,7 @@ import ru.explore.with.me.mapper.event.EventMapper;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.repository.category.CategoryRepository;
 import ru.explore.with.me.repository.event.EventRepository;
+import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.repository.user.UserRepository;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.ParticipantStatus;
@@ -29,18 +30,26 @@ public class DbEventService implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+
+    private final ParticipationRepository participationRepository;
     private final EventMapper eventMapper;
     private final EventClient eventClient;
+    // Количество часов, на количество которых дата начала события должна быть позже
+    // относительно момента создания/обновления
+    private final int TIME_BEFORE_CREATE = 2;
+    private final int TIME_BEFORE_PUBLISH = 1;
 
     @Autowired
     public DbEventService(EventRepository eventRepository,
                           UserRepository userRepository,
                           CategoryRepository categoryRepository,
+                          ParticipationRepository participationRepository,
                           EventMapper eventMapper,
                           EventClient eventClient) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
+        this.participationRepository = participationRepository;
         this.eventMapper = eventMapper;
         this.eventClient = eventClient;
     }
@@ -48,7 +57,7 @@ public class DbEventService implements EventService {
     @Override
     public List<EventShortDto> getUserEvents(long userId, int from, int size) {
         checkUserExist(userId);
-        Pageable page = PageRequest.of(from/size,size);
+        Pageable page = PageRequest.of(from / size, size);
         return eventRepository.findAllByCreator(userId, page).stream()
                 .peek(event -> event.getParticipations().stream()
                         .filter(participant -> participant.getStatus().equals(ParticipantStatus.CONFIRMED))
@@ -59,14 +68,15 @@ public class DbEventService implements EventService {
 
     /**
      * TODO доделать
-     * @param users
-     * @param states
-     * @param categories
-     * @param rangeStart
-     * @param rangeEnd
-     * @param from
-     * @param size
-     * @return
+     *
+     * @param users      список id пользователей, чьи события нужно найти
+     * @param states     список состояний в которых находятся искомые события
+     * @param categories список id категорий в которых будет вестись поиск
+     * @param rangeStart дата и время не раньше которых должно произойти событие
+     * @param rangeEnd   дата и время не позже которых должно произойти событие
+     * @param from       количество событий, которые нужно пропустить для формирования текущего набора
+     * @param size       количество событий в наборе
+     * @return List EventFullDto
      */
     @Override
     public List<EventFullDto> getEventsToAdmin(
@@ -77,15 +87,15 @@ public class DbEventService implements EventService {
             LocalDateTime rangeEnd,
             int from,
             int size) {
-        eventRepository.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
-        return null;
+        return eventRepository.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size).stream()
+                .map(eventMapper::toEventFullDto)
+                .collect(Collectors.toList());
     }
 
     /**
      * Получение события по eго идентификатору. В Случае отсутвия события выбрасывается исключение.
-     *
      * @param id      Id События
-     * @param request
+     * @param request Данные запроса для отправки в сервис статистики. В случае null статистика не отравляется
      * @return EventFullDto or NotFoundException
      */
     @Override
@@ -102,13 +112,13 @@ public class DbEventService implements EventService {
      * Создание пользователем нового события.
      * Время начала события должно быть позже его создания на 2 часа, выбрасывется исключение.
      * Если пользователя или категории не существует, выбрасывается исключение.
-     * @param userId Id пользователя
+     * @param userId          Id пользователя
      * @param requestEventDto Dto объект события.
      * @return EventFullDto or NotFoundException or ValidationException
      */
     @Override
     public EventFullDto createEvent(long userId, RequestEventDto requestEventDto) {
-        checkEventDate(requestEventDto);
+        checkEventDate(requestEventDto.getEventDate(), TIME_BEFORE_CREATE);
 
         Event event = eventMapper.toNewEvent(requestEventDto);
 
@@ -125,6 +135,7 @@ public class DbEventService implements EventService {
 
     /**
      * TODO доделать
+     *
      * @param userId
      * @param requestEventDto
      * @return
@@ -132,37 +143,9 @@ public class DbEventService implements EventService {
     @Override
     public EventFullDto updateEvent(long userId, RequestEventDto requestEventDto) {
         checkUserExist(userId);
-        checkEventDate(requestEventDto);
-
-        Event eventFromDb = eventRepository.findById(requestEventDto.getEventId()).orElseThrow(
-                () -> new NotFoundException("События не существует. Обновление не возможно"));
-
-        if (!eventFromDb.getStatus().equals(EventStatus.WAITING) || !eventFromDb.getStatus().equals(EventStatus.CANCELED)) {
-            throw new ValidationException("Only pending or canceled events can be changed");
-        }
-
-        eventFromDb.setTitle(requestEventDto.getTitle().trim());
-        eventFromDb.setAnnotation(requestEventDto.getAnnotation().trim());
-        eventFromDb.setDescription(requestEventDto.getDescription().trim());
-        eventFromDb.setCategory(categoryRepository.findById(requestEventDto.getCategory()).orElseThrow(
-                () -> new NotFoundException("Category not found")));
-        eventFromDb.setEventDate(requestEventDto.getEventDate());
-
-        if (requestEventDto.getPaid() != null) {
-            eventFromDb.setPaid(requestEventDto.getPaid());
-        }
-
-        eventFromDb.setParticipantLimit(requestEventDto.getParticipantLimit());
-
-        if (requestEventDto.getParticipantLimit() == 0 || requestEventDto.getRequestModeration() == null) {
-            eventFromDb.setRequestModeration(false);
-        } else {
-            eventFromDb.setRequestModeration(requestEventDto.getRequestModeration());
-        }
-
-        eventFromDb.setStatus(EventStatus.WAITING);
-
-        return eventMapper.toEventFullDto(eventRepository.save(eventFromDb));
+        Event event = updateEventFromDto(requestEventDto, requestEventDto.getEventId(), true);
+        event.setStatus(EventStatus.WAITING);
+        return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
     @Override
@@ -185,23 +168,135 @@ public class DbEventService implements EventService {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new NotFoundException("События не сущесвует"));
 
-        if (event.getStatus().equals(EventStatus.WAITING)) {
-            event.setStatus(EventStatus.CANCELED);
+        if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
+            event.setStatus(EventStatus.ENDED);
             return eventMapper.toEventFullDto(eventRepository.save(event));
         }
 
         throw new ValidationException("Возможно отменить событие только ожидающее подтверждения модератором");
     }
 
+    /**
+     * TODO
+     * @param text
+     * @param categories
+     * @param paid
+     * @param rangeStart
+     * @param rangeEnd
+     * @param onlyAvailable
+     * @param sort
+     * @param from
+     * @param size
+     * @param request
+     * @return
+     */
     @Override
-    public List<EventShortDto> getPublicEvents(String text, Set<Integer> categories, boolean paid, String rangeStart, String rangeEnd, boolean onlyAvailable, String sort, int from, int size, HttpServletRequest request) {
+    public List<EventShortDto> getPublicEvents(String text,
+                                               Set<Integer> categories,
+                                               boolean paid, String rangeStart,
+                                               String rangeEnd, boolean onlyAvailable,
+                                               String sort, int from, int size,
+                                               HttpServletRequest request) {
         eventClient.sendStatistic(request);
         return null;
     }
 
-    private void checkEventDate(RequestEventDto requestEventDto) {
-        if (requestEventDto.getEventDate().plusHours(2).isBefore(requestEventDto.getEventDate())) {
-            throw new ValidationException("Время начала события должно быть на 2 часа позже момента его создания");
+    @Override
+    public EventFullDto editEventByAdmin(RequestEventDto eventDto, long eventId) {
+        if (eventDto == null) {
+            throw new ValidationException("Тело запроса null, проверьте отправляемые данные");
+        }
+
+        return eventMapper.toEventFullDto(eventRepository.save(updateEventFromDto(eventDto,eventId,false)));
+    }
+
+    @Override
+    public EventFullDto publishEvent(long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("События не существует. Обновление невозможно"));
+        checkEventDate(event.getEventDate(), TIME_BEFORE_PUBLISH);
+
+        if (!event.getStatus().equals(EventStatus.WAITING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
+            throw new ValidationException("Событие уже опубликовано или не ожидает публикации");
+        }
+
+        event.setStatus(EventStatus.PUBLISHED);
+        event.setPublishedOn(LocalDateTime.now());
+        return eventMapper.toEventFullDto(eventRepository.save(event));
+    }
+
+    @Override
+    public EventFullDto rejectEvent(long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("События не существует. Обновление невозможно"));
+
+        if (!event.getStatus().equals(EventStatus.WAITING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
+            throw new ValidationException("Событие уже опубликовано или не ожидает публикации");
+        }
+
+        event.setStatus(EventStatus.REJECTED);
+        return eventMapper.toEventFullDto(eventRepository.save(event));
+    }
+
+    private Event updateEventFromDto(RequestEventDto eventDto, long eventId, boolean isUser) {
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("События не существует. Обновление невозможно"));
+
+        if (isUser) {
+            checkEventDate(eventDto.getEventDate(), TIME_BEFORE_CREATE);
+            if (!event.getStatus().equals(EventStatus.WAITING) || !event.getStatus().equals(EventStatus.REJECTED)) {
+                throw new ValidationException("Невозможно обновить опубликованное событие");
+            }
+        }
+
+        if (eventDto.getTitle() != null) {
+            event.setTitle(eventDto.getTitle().trim());
+        }
+        if (eventDto.getAnnotation() != null) {
+            event.setAnnotation(eventDto.getAnnotation().trim());
+        }
+        if (eventDto.getDescription() != null) {
+            event.setDescription(eventDto.getDescription().trim());
+        }
+        if (eventDto.getCategory() != 0) {
+            event.setCategory(categoryRepository.findById(eventDto.getCategory()).orElseThrow(
+                    () -> new NotFoundException("Категория не найдена")));
+        }
+        if (eventDto.getEventDate() != null) {
+            event.setEventDate(eventDto.getEventDate());
+        }
+
+        if (eventDto.getParticipantLimit() != null) {
+            if (eventDto.getParticipantLimit() == 0) {
+                event.setParticipations(List.of());
+                event.setRequestModeration(false);
+            } else if (eventDto.getParticipantLimit() > event.getParticipantLimit()) {
+                event.setParticipantLimit(eventDto.getParticipantLimit());
+            } else if (eventDto.getParticipantLimit() < event.getParticipantLimit()) {
+                event.setParticipantLimit(eventDto.getParticipantLimit());
+
+                // Если количество участников при обновлении уменьшено, то все запросы участия
+                // уходят на новое согласование в не зависимости от необходимости их одобрения
+                participationRepository.changeParticipantsStatusOfEvent(
+                        event.getId(), ParticipantStatus.PENDING.toString());
+            }
+        }
+        // В случае если обновляется модерация в не зависимости true || false, все запросы уходят на пересогласование
+        // требуется повторная отправка запросов (обновление) т.к. их может быть больше лимита
+        // в случае false одобрять сразу все безсмысленно по этой же причине
+        if (eventDto.getRequestModeration() != null && event.getParticipantLimit() > 0) {
+            event.setRequestModeration(eventDto.getRequestModeration());
+            participationRepository.changeParticipantsStatusOfEvent(
+                    event.getId(), ParticipantStatus.PENDING.toString());
+        }
+
+        return event;
+    }
+
+    private void checkEventDate(LocalDateTime eventDate, int hours) {
+        if (eventDate.plusHours(hours).isBefore(eventDate)) {
+            throw new ValidationException("Время начала события должно быть не ранее " + hours +
+                    " часов от момента его создания или публикации");
         }
     }
 

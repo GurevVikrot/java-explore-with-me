@@ -36,6 +36,6 @@ public class RequestEventDto {
     private LocalDateTime eventDate;
     private Boolean paid;
     @PositiveOrZero
-    private int participantLimit;
+    private Integer participantLimit;
     private Boolean requestModeration;
 }

@@ -8,6 +8,7 @@ import ru.explore.with.me.dto.category.CategoryDto;
 import ru.explore.with.me.dto.compilation.CompilationDto;
 import ru.explore.with.me.dto.compilation.NewCompilationDto;
 import ru.explore.with.me.dto.event.EventFullDto;
+import ru.explore.with.me.dto.event.RequestEventDto;
 import ru.explore.with.me.dto.user.UserDto;
 import ru.explore.with.me.service.category.CategoryService;
 import ru.explore.with.me.service.compilation.CompilationService;
@@ -65,6 +66,18 @@ public class AdminController {
         return userService.deleteUser(userId);
     }
 
+    /**
+     * Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия.
+     * Все параметры не обязательные.
+     * @param users список id пользователей, чьи события нужно найти
+     * @param states список состояний в которых находятся искомые события
+     * @param categories список id категорий в которых будет вестись поиск
+     * @param rangeStart дата и время не раньше которых должно произойти событие
+     * @param rangeEnd дата и время не позже которых должно произойти событие
+     * @param from количество событий, которые нужно пропустить для формирования текущего набора. default = 0
+     * @param size количество событий в наборе. default = 10
+     * @return List<EventFullDto>
+     */
     @GetMapping("/events")
     public List<EventFullDto> getEvents(
             @RequestParam(required = false) List<Long> users,
@@ -83,6 +96,25 @@ public class AdminController {
                 "from {}\n" +
                 "size{} \n", users, states, categories, rangeStart, rangeEnd, from, size);
         return eventService.getEventsToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+    }
+
+    @PutMapping("/events/{eventId}")
+    public EventFullDto editEventByAdmin(@PathVariable @Positive long eventId,
+                                         @RequestBody RequestEventDto eventDto) {
+        log.info("Редактирование события id = {} админом \n eventDto: {}", eventId, eventDto.toString());
+        return eventService.editEventByAdmin(eventDto, eventId);
+    }
+
+    @PatchMapping("/events/{eventId}/publish")
+    public EventFullDto publishEvent (@PathVariable @Positive long eventId) {
+        log.info("Публикация события id = {}", eventId);
+        return eventService.publishEvent(eventId);
+    }
+
+    @PatchMapping("/events/{eventId}/reject")
+    public EventFullDto rejectEvent (@PathVariable @Positive long eventId) {
+        log.info("Публикация события id = {}", eventId);
+        return eventService.rejectEvent(eventId);
     }
 
     @PostMapping("/categories")

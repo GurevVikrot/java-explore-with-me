@@ -4,28 +4,40 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.model.event.Event;
+import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.util.EventStatus;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
+@Transactional
 public class EventRepository {
-    private EventJpaRepository jpaRepository;
-    private EventDAO eventDAO;
+    private final EventJpaRepository jpaRepository;
+    private final EventDAO eventDAO;
+
+    private final ParticipationRepository participationRepository;
 
     @Autowired
-    public EventRepository(EventJpaRepository jpaRepository, EventDAO eventDAO) {
+    public EventRepository(EventJpaRepository jpaRepository,
+                           EventDAO eventDAO,
+                           ParticipationRepository participationRepository) {
         this.jpaRepository = jpaRepository;
         this.eventDAO = eventDAO;
+        this.participationRepository = participationRepository;
     }
 
     public List<Event> findAllToAdmin(List<Long> users, List<EventStatus> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
-       return eventDAO.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+       return eventDAO.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size).stream()
+               .peek((e) -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
+               .collect(Collectors.toList());
     }
 
     public List<Event> findAllByCreator(long userId, Pageable pageable) {
+
         return jpaRepository.findAllByCreator(userId, pageable);
     }
 

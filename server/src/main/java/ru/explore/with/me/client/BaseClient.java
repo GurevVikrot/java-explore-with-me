@@ -9,6 +9,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 public class BaseClient {
@@ -84,9 +85,11 @@ public class BaseClient {
             } else {
                 serverResponse = rest.exchange(path, method, requestEntity, Object.class);
             }
-        } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
+        } catch (Exception e) {
+            log.error("Ошибка запроса к сервису статистики", e);
+            return null;
         }
+
         return prepareGatewayResponse(serverResponse);
     }
 

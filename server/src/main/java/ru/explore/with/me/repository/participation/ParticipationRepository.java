@@ -1,4 +1,4 @@
-package ru.explore.with.me.repository;
+package ru.explore.with.me.repository.participation;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +16,12 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
                     "WHERE event_id = ?1 " +
                     "AND status = ?3", nativeQuery = true)
     void changeParticipantsStatusOfEvent(long eventId, String newStatus, String oldStatus);
+
+    @Query(value =
+            "UPDATE participants " +
+                    "SET status = ?2 " +
+                    "WHERE event_id = ?1 ", nativeQuery = true)
+    void changeParticipantsStatusOfEvent(long eventId, String newStatus);
 
     List<Participation> findAllByUserId(long userId);
 
