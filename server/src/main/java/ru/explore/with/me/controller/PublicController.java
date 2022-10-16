@@ -15,10 +15,12 @@ import ru.explore.with.me.dto.event.EventShortDto;
 import ru.explore.with.me.service.category.CategoryService;
 import ru.explore.with.me.service.compilation.CompilationService;
 import ru.explore.with.me.service.event.EventService;
+import ru.explore.with.me.util.EventSort;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -28,40 +30,55 @@ import java.util.Set;
 public class PublicController {
 
     private final EventService eventService;
-    private final EventClient eventClient;
 
     private final CompilationService compilationService;
     private final CategoryService categoryService;
 
     @Autowired
     public PublicController(EventService eventService,
-                            EventClient eventClient,
                             CompilationService compilationService,
                             CategoryService categoryService) {
         this.eventService = eventService;
-        this.eventClient = eventClient;
         this.compilationService = compilationService;
         this.categoryService = categoryService;
     }
 
+    /**
+     * Публичный эндпоинт получения событий с возмгожностью фильтрациии.
+     * Стандатрные условия филтрации:
+     *      1. событие должно быть опубликовано
+     *      2. Если не указан диапазон,  [rangeStart-rangeEnd], то нужно выгружать события,
+     *      которые произойдут позже текущей даты и времени
+     * @param text текст для поиска в содержимом аннотации и подробном описании события
+     * @param categories список идентификаторов категорий в которых будет вестись поиск
+     * @param paid поиск только платных/бесплатных событий
+     * @param rangeStart дата и время не раньше которых должно произойти событие
+     * @param rangeEnd дата и время не позже которых должно произойти событие
+     * @param onlyAvailable только события у которых не исчерпан лимит запросов на участие
+     * @param sort Вариант сортировки: по дате события или по количеству просмотров
+     * @param from количество событий, которые нужно пропустить для формирования текущего набора
+     * @param size количество событий в наборе
+     * @param request данные запроса для отправки статистики
+     * @return List EventShortDto
+     */
     @GetMapping("/events")
     public List<EventShortDto> getEvents(
             @RequestParam String text,
-            @RequestParam Set<Integer> categories,
+            @RequestParam List<Integer> categories,
             @RequestParam boolean paid,
-            @RequestParam String rangeStart,
-            @RequestParam String rangeEnd,
+            @RequestParam LocalDateTime rangeStart,
+            @RequestParam LocalDateTime rangeEnd,
             @RequestParam(required = false, defaultValue = "false") boolean onlyAvailable,
-            @RequestParam String sort,
+            @RequestParam EventSort sort,
             @RequestParam int from,
             @RequestParam int size,
             HttpServletRequest request) {
-        return eventService.getPublicEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, request);
+        return eventService.getPublicEvents(
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size, request);
     }
 
     /**
-     * Публичный эндпоин. Получение подробноый информации о событии по id
-     *
+     * Публичный эндпоин. Получение подробной информации о событии по id
      * @param id Id события
      * @return EventFullDto
      */

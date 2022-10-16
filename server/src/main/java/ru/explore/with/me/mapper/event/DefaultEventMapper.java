@@ -9,7 +9,6 @@ import ru.explore.with.me.dto.event.RequestEventDto;
 import ru.explore.with.me.mapper.category.CategoryMapper;
 import ru.explore.with.me.mapper.user.UserMapper;
 import ru.explore.with.me.model.event.Event;
-import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.util.EventStatus;
 
 import java.time.LocalDateTime;
@@ -103,7 +102,7 @@ public class DefaultEventMapper implements EventMapper{
                 List.of(),
                 requestEventDto.getParticipantLimit(),
                 requestEventDto.getRequestModeration(),
-                EventStatus.WAITING,
+                EventStatus.PENDING,
                 LocalDateTime.now(),
                 null);
     }
@@ -112,6 +111,6 @@ public class DefaultEventMapper implements EventMapper{
         if (start == null) {
             return 0;
         }
-        return eventClient.getEventStatistic(eventId,start, LocalDateTime.now()).getHits();
+        return eventClient.getEventStatistic(eventId, start, LocalDateTime.now()).getHits();
     }
 }

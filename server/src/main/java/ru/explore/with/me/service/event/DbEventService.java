@@ -16,13 +16,13 @@ import ru.explore.with.me.repository.category.CategoryRepository;
 import ru.explore.with.me.repository.event.EventRepository;
 import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.repository.user.UserRepository;
+import ru.explore.with.me.util.EventSort;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.ParticipantStatus;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,21 +79,21 @@ public class DbEventService implements EventService {
      * @return List EventFullDto
      */
     @Override
-    public List<EventFullDto> getEventsToAdmin(
-            List<Long> users,
-            List<EventStatus> states,
-            List<Integer> categories,
-            LocalDateTime rangeStart,
-            LocalDateTime rangeEnd,
-            int from,
-            int size) {
+    public List<EventFullDto> getEventsToAdmin(List<Long> users,
+                                               List<EventStatus> states,
+                                               List<Integer> categories,
+                                               LocalDateTime rangeStart,
+                                               LocalDateTime rangeEnd,
+                                               int from,
+                                               int size) {
         return eventRepository.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size).stream()
                 .map(eventMapper::toEventFullDto)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Получение события по eго идентификатору. В Случае отсутвия события выбрасывается исключение.
+     * Получение события по eго идентификатору. В Случае отсутствия события выбрасывается исключение.
+     *
      * @param id      Id События
      * @param request Данные запроса для отправки в сервис статистики. В случае null статистика не отравляется
      * @return EventFullDto or NotFoundException
@@ -112,6 +112,7 @@ public class DbEventService implements EventService {
      * Создание пользователем нового события.
      * Время начала события должно быть позже его создания на 2 часа, выбрасывется исключение.
      * Если пользователя или категории не существует, выбрасывается исключение.
+     *
      * @param userId          Id пользователя
      * @param requestEventDto Dto объект события.
      * @return EventFullDto or NotFoundException or ValidationException
@@ -126,9 +127,9 @@ public class DbEventService implements EventService {
                 () -> new NotFoundException("Пользователь не найден")));
         event.setCategory(categoryRepository.findById(requestEventDto.getCategory()).orElseThrow(
                 () -> new NotFoundException("Категория не найдена")));
-        if (requestEventDto.getParticipantLimit() == 0 || requestEventDto.getRequestModeration() == null) {
-            event.setRequestModeration(false);
-        }
+//        if (requestEventDto.getParticipantLimit() == 0 || requestEventDto.getRequestModeration() == null) {
+//            event.setRequestModeration(false);
+//        }
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
@@ -144,7 +145,7 @@ public class DbEventService implements EventService {
     public EventFullDto updateEvent(long userId, RequestEventDto requestEventDto) {
         checkUserExist(userId);
         Event event = updateEventFromDto(requestEventDto, requestEventDto.getEventId(), true);
-        event.setStatus(EventStatus.WAITING);
+        event.setStatus(EventStatus.PENDING);
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
@@ -166,10 +167,10 @@ public class DbEventService implements EventService {
         checkUserExist(userId);
 
         Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("События не сущесвует"));
+                () -> new NotFoundException("События не существует"));
 
         if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
-            event.setStatus(EventStatus.ENDED);
+            event.setStatus(EventStatus.CANCELED);
             return eventMapper.toEventFullDto(eventRepository.save(event));
         }
 
@@ -177,28 +178,69 @@ public class DbEventService implements EventService {
     }
 
     /**
-     * TODO
-     * @param text
-     * @param categories
-     * @param paid
-     * @param rangeStart
-     * @param rangeEnd
-     * @param onlyAvailable
-     * @param sort
-     * @param from
-     * @param size
-     * @param request
-     * @return
+     * Метод получения событий с возможностью фильтрации.
+     * Стандартные условия фильтрации:
+     * 1. Событие должно быть опубликовано
+     * 2. Если не указан диапазон,  [rangeStart-rangeEnd], то нужно выгружать события,
+     * которые произойдут позже текущей даты и времени
+     *
+     * @param text          текст для поиска в содержимом аннотации и подробном описании события
+     * @param categories    список идентификаторов категорий в которых будет вестись поиск
+     * @param paid          поиск только платных/бесплатных событий
+     * @param rangeStart    дата и время не раньше которых должно произойти событие
+     * @param rangeEnd      дата и время не позже которых должно произойти событие
+     * @param onlyAvailable только события у которых не исчерпан лимит запросов на участие
+     * @param sort          Вариант сортировки: по дате события или по количеству просмотров
+     * @param from          количество событий, которые нужно пропустить для формирования текущего набора
+     * @param size          количество событий в наборе
+     * @param request       данные запроса для отправки статистики
+     * @return List EventShortDto
      */
     @Override
     public List<EventShortDto> getPublicEvents(String text,
-                                               Set<Integer> categories,
-                                               boolean paid, String rangeStart,
-                                               String rangeEnd, boolean onlyAvailable,
-                                               String sort, int from, int size,
+                                               List<Integer> categories,
+                                               boolean paid,
+                                               LocalDateTime rangeStart,
+                                               LocalDateTime rangeEnd,
+                                               boolean onlyAvailable,
+                                               EventSort sort,
+                                               int from,
+                                               int size,
                                                HttpServletRequest request) {
+        if (rangeEnd != null && rangeStart != null) {
+            if (rangeEnd.isBefore(rangeStart)) {
+                throw new ValidationException("Некорректный промежуток времени." +
+                        " Дата окончания промежутка раньше, чем начало промежутка.");
+            }
+        }
+
         eventClient.sendStatistic(request);
-        return null;
+
+        if (categories != null) {
+           categories = categories.stream().distinct().collect(Collectors.toList());
+        }
+
+        if (text != null) {
+           text = text.trim();
+        }
+
+        List<EventShortDto> events = eventRepository.findAllByFilter(
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size).stream()
+                .peek(event -> event.getParticipations().stream()
+                        .filter(participant -> participant.getStatus().equals(ParticipantStatus.CONFIRMED))
+                        .collect(Collectors.toList()))
+                .map(eventMapper::toShortEventDto)
+                .collect(Collectors.toList());
+
+        // Сотрировка если по кол-ву просмотров
+
+        if (sort.equals(EventSort.VIEWS)) {
+            events = events.stream()
+                    .sorted((event1, event2) -> event1.getViews() - event2.getViews())
+                    .collect(Collectors.toList());
+        }
+
+        return events;
     }
 
     @Override
@@ -207,7 +249,7 @@ public class DbEventService implements EventService {
             throw new ValidationException("Тело запроса null, проверьте отправляемые данные");
         }
 
-        return eventMapper.toEventFullDto(eventRepository.save(updateEventFromDto(eventDto,eventId,false)));
+        return eventMapper.toEventFullDto(eventRepository.save(updateEventFromDto(eventDto, eventId, false)));
     }
 
     @Override
@@ -216,7 +258,7 @@ public class DbEventService implements EventService {
                 () -> new NotFoundException("События не существует. Обновление невозможно"));
         checkEventDate(event.getEventDate(), TIME_BEFORE_PUBLISH);
 
-        if (!event.getStatus().equals(EventStatus.WAITING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
+        if (!event.getStatus().equals(EventStatus.PENDING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
             throw new ValidationException("Событие уже опубликовано или не ожидает публикации");
         }
 
@@ -230,21 +272,31 @@ public class DbEventService implements EventService {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new NotFoundException("События не существует. Обновление невозможно"));
 
-        if (!event.getStatus().equals(EventStatus.WAITING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
+        if (!event.getStatus().equals(EventStatus.PENDING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
             throw new ValidationException("Событие уже опубликовано или не ожидает публикации");
         }
 
-        event.setStatus(EventStatus.REJECTED);
+        event.setStatus(EventStatus.CANCELED);
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
+    /**
+     * Метод для получения обновленного объекта Event. Используется для обновления как пользовательских запросов,
+     * так и админских
+     * @param eventDto Дто объект события с новыми полями
+     * @param eventId Id события
+     * @param isUser Флаг, обновление от пользователя = true, от админа = false
+     * @return Event
+     */
     private Event updateEventFromDto(RequestEventDto eventDto, long eventId, boolean isUser) {
         Event event = eventRepository.findById(eventId).orElseThrow(
                 () -> new NotFoundException("События не существует. Обновление невозможно"));
 
+        // Пользователь не может обновить уже опубликованное событие
+        // и не может выставить дату начала события раньше 2-ух часов от текущего момента
         if (isUser) {
             checkEventDate(eventDto.getEventDate(), TIME_BEFORE_CREATE);
-            if (!event.getStatus().equals(EventStatus.WAITING) || !event.getStatus().equals(EventStatus.REJECTED)) {
+            if (event.getStatus().equals(EventStatus.PUBLISHED)) {
                 throw new ValidationException("Невозможно обновить опубликованное событие");
             }
         }
@@ -283,7 +335,7 @@ public class DbEventService implements EventService {
         }
         // В случае если обновляется модерация в не зависимости true || false, все запросы уходят на пересогласование
         // требуется повторная отправка запросов (обновление) т.к. их может быть больше лимита
-        // в случае false одобрять сразу все безсмысленно по этой же причине
+        // в случае false одобрять сразу все бессмысленно по этой же причине
         if (eventDto.getRequestModeration() != null && event.getParticipantLimit() > 0) {
             event.setRequestModeration(eventDto.getRequestModeration());
             participationRepository.changeParticipantsStatusOfEvent(
@@ -294,9 +346,9 @@ public class DbEventService implements EventService {
     }
 
     private void checkEventDate(LocalDateTime eventDate, int hours) {
-        if (eventDate.plusHours(hours).isBefore(eventDate)) {
-            throw new ValidationException("Время начала события должно быть не ранее " + hours +
-                    " часов от момента его создания или публикации");
+        if (LocalDateTime.now().plusHours(hours).isAfter(eventDate)) {
+            throw new ValidationException("Время начала события должно быть позже " + hours +
+                    " часов от текущего момента");
         }
     }
 

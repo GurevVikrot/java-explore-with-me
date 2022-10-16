@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.repository.participation.ParticipationRepository;
+import ru.explore.with.me.util.EventSort;
 import ru.explore.with.me.util.EventStatus;
 
 import javax.transaction.Transactional;
@@ -30,7 +31,13 @@ public class EventRepository {
         this.participationRepository = participationRepository;
     }
 
-    public List<Event> findAllToAdmin(List<Long> users, List<EventStatus> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+    public List<Event> findAllToAdmin(List<Long> users,
+                                      List<EventStatus> states,
+                                      List<Integer> categories,
+                                      LocalDateTime rangeStart,
+                                      LocalDateTime rangeEnd,
+                                      int from,
+                                      int size) {
        return eventDAO.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size).stream()
                .peek((e) -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
                .collect(Collectors.toList());
@@ -38,7 +45,7 @@ public class EventRepository {
 
     public List<Event> findAllByCreator(long userId, Pageable pageable) {
 
-        return jpaRepository.findAllByCreator(userId, pageable);
+        return jpaRepository.findAllByCreatorId(userId, pageable);
     }
 
     public List<Event> findAllById(List<Long> events) {
@@ -55,5 +62,20 @@ public class EventRepository {
 
     public boolean existById(long eventId) {
         return jpaRepository.existsById(eventId);
+    }
+
+    public List<Event> findAllByFilter(String text,
+                                               List<Integer> categories,
+                                               boolean paid,
+                                               LocalDateTime rangeStart,
+                                               LocalDateTime rangeEnd,
+                                               boolean onlyAvailable,
+                                               EventSort sort,
+                                               int from,
+                                               int size) {
+       return eventDAO.findAllByFilter(
+               text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size).stream()
+               .peek((e) -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
+               .collect(Collectors.toList());
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.explore.with.me.dto.category.CategoryDto;
+import ru.explore.with.me.exeption.NoContentException;
 import ru.explore.with.me.exeption.NotFoundException;
 import ru.explore.with.me.exeption.ValidationException;
 import ru.explore.with.me.mapper.category.CategoryMapper;
@@ -12,6 +13,7 @@ import ru.explore.with.me.model.category.Category;
 import ru.explore.with.me.repository.category.CategoryRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,8 +84,13 @@ public class DbCategoryService implements CategoryService {
 
     @Override
     public CategoryDto getCategory(int catId) {
+        Optional<Category> category = repository.findById(catId);
+        if (category.isEmpty()) {
+            throw new NoContentException(null);
+        }
+
         return categoryMapper.toCategoryDto(
-                repository.findById(catId).orElseThrow(
+                category.orElseThrow(
                         () -> new NotFoundException("Категория не найдена")));
     }
 

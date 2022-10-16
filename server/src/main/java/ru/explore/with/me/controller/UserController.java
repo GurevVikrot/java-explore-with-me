@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/events")
-    @ResponseStatus(HttpStatus.CREATED)
+    //    @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@PathVariable @Positive long userId,
                                     @RequestBody @Valid RequestEventDto requestEventDto) {
         log.info("Пользователь id = {}. Создание события: {}", userId, requestEventDto);
@@ -100,7 +100,7 @@ public class UserController {
 
     @PostMapping("/{userId}/requests")
     public ParticipationRequestDto newParticipation(@PathVariable @Positive long userId,
-                                                    @PathVariable @Positive long eventId) {
+                                                    @RequestParam @Positive long eventId) {
         log.info("Запрос на участие в событии id = {} от пользователя id = {}", eventId, userId);
         return participationService.newParticipation(userId, eventId);
     }

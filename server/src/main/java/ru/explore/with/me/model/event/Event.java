@@ -53,6 +53,9 @@ public class Event {
 
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
     private List<Participation> participations;
+//    @JoinTable(name = "participants",
+//    )
+//    private List<Participation> participations;
 
     @Column(name = "participant_limit")
     private int participantLimit;

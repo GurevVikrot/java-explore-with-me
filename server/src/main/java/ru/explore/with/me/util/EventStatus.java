@@ -8,8 +8,8 @@ package ru.explore.with.me.util;
  *     ENDED - Завершено
  */
 public enum EventStatus {
-    WAITING,
-    REJECTED,
+    PENDING,
+    CANCELED,
     PUBLISHED,
     ENDED
 }

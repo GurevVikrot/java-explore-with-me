@@ -6,12 +6,14 @@ import org.springframework.stereotype.Component;
 import ru.explore.with.me.model.category.Category;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.model.user.User;
+import ru.explore.with.me.util.EventSort;
 import ru.explore.with.me.util.EventStatus;
 
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class EventDAO {
@@ -21,6 +23,17 @@ public class EventDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Метод для выборки событий для админского эндпоинта
+     * @param users
+     * @param states
+     * @param categories
+     * @param rangeStart
+     * @param rangeEnd
+     * @param from
+     * @param size
+     * @return
+     */
     public List<Event> findAllToAdmin(
             List<Long> users,
             List<EventStatus> states,
@@ -29,15 +42,159 @@ public class EventDAO {
             LocalDateTime rangeEnd, // Выбор событий до даты
             int from,
             int size) {
-//        SELECT *
-//                FROM events
-//        LEFT OUTER JOIN categories as c on events.category_id = c.id
-//        LEFT OUTER JOIN users as u ON events.creator = u.id
-//        WHERE category_id = ANY (ARRAY[category_id])
+
         List<Object> args = new ArrayList<>();
         List<Integer> argTypes = new ArrayList<>();
 
-        StringBuilder sql = new StringBuilder(
+        StringBuilder sql = getSqlBuilder();
+        sql.append("WHERE true ");
+
+        if (users != null && !users.isEmpty()) {
+            sql.append("AND e.creator = ANY(ARRAY[?]) ");
+            args.add(users);
+            argTypes.add(Types.BIGINT);
+        }
+
+        if (states!= null && !states.isEmpty()) {
+            sql.append("AND e.status = ANY (ARRAY[?]) ");
+            args.add(states);
+            argTypes.add(Types.VARCHAR);
+        }
+
+        if (categories!= null && !categories.isEmpty()) {
+            sql.append("AND e.category_id = ANY(ARRAY[?]) ");
+            args.add(categories);
+            argTypes.add(Types.INTEGER);
+        }
+
+        if (rangeStart != null) {
+            if (rangeEnd != null) {
+                sql.append("AND e.event_date BETWEEN ? AND ? ");
+                args.add(rangeStart);
+                argTypes.add(Types.TIMESTAMP);
+                args.add(rangeEnd);
+                argTypes.add(Types.TIMESTAMP);
+            } else {
+                sql.append("AND e.event_date AFTER ? ");
+                args.add(rangeStart);
+                argTypes.add(Types.TIMESTAMP);
+            }
+        } else if (rangeEnd != null) {
+            sql.append("AND e.event_date BEFORE ? ");
+            args.add(rangeEnd);
+            argTypes.add(Types.TIMESTAMP);
+        }
+
+        sql.append("OFFSET ? LIMIT ?");
+        args.add(from);
+        argTypes.add(Types.INTEGER);
+        args.add(size);
+        argTypes.add(Types.INTEGER);
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                args.toArray(),
+                argTypes.stream().mapToInt(Integer::intValue).toArray(),
+                (rs, rowNum) -> eventFromDb(rs));
+    }
+
+    /**
+     * Метод для выборки событий для публичного эндпоинта получения всех событий
+     * @param text
+     * @param categories
+     * @param paid
+     * @param rangeStart
+     * @param rangeEnd
+     * @param onlyAvailable
+     * @param sort
+     * @param from
+     * @param size
+     * @return
+     */
+    public List<Event> findAllByFilter(String text,
+                                List<Integer> categories,
+                                boolean paid,
+                                LocalDateTime rangeStart,
+                                LocalDateTime rangeEnd,
+                                boolean onlyAvailable,
+                                EventSort sort,
+                                int from,
+                                int size) {
+        StringBuilder sql = getSqlBuilder();
+        List<Object> args = new ArrayList<>();
+        List<Integer> argTypes = new ArrayList<>();
+
+        sql.append("LEFT Outer JOIN (SELECT event_id, COUNT(user_id) AS count " +
+                "FROM participants " +
+                "WHERE status = 'WAITING' " +
+                "GROUP BY (event_id)) AS p ON e.id = p.event_id ");
+        sql.append("WHERE e.status = 'PUBLISHED' ");
+
+        if (text != null && !text.isEmpty()) {
+            sql.append("AND UPPER(e.annotation) LIKE UPPER(CONCAT('%', ?, '%')) " +
+                    "OR UPPER(e.description) LIKE UPPER(CONCAT('%', ?, '%'))");
+            args.add(text);
+            args.add(text);
+            argTypes.add(Types.VARCHAR);
+            argTypes.add(Types.VARCHAR);
+        }
+
+        if (categories != null && !categories.isEmpty()) {
+            sql.append("AND e.category_id = ANY(ARRAY[?]) ");
+            args.add(categories);
+            argTypes.add(Types.INTEGER);
+        }
+
+        if (paid) {
+            sql.append("AND e.paid = true ");
+        }
+
+        if (rangeStart != null) {
+            if (rangeEnd != null) {
+                sql.append("AND e.event_date BETWEEN ? AND ? ");
+                args.add(rangeStart);
+                argTypes.add(Types.TIMESTAMP);
+                args.add(rangeEnd);
+                argTypes.add(Types.TIMESTAMP);
+            } else {
+                sql.append("AND e.event_date AFTER ? ");
+                args.add(rangeStart);
+                argTypes.add(Types.TIMESTAMP);
+            }
+        } else if (rangeEnd != null) {
+            sql.append("AND e.event_date BEFORE ? ");
+            args.add(rangeEnd);
+            argTypes.add(Types.TIMESTAMP);
+        } else { // если в запросе не указан диапазон дат [rangeStart-rangeEnd],
+            // то нужно выгружать события, которые произойдут позже текущей даты и времени
+            sql.append("AND e.event_date AFTER ? ");
+            args.add(LocalDateTime.now());
+            argTypes.add(Types.TIMESTAMP);
+        }
+
+        if (onlyAvailable) {
+            sql.append("AND e.participant_limit >= p.count OR e.participant_limit = 0 OR p.count IS NULL ");
+        }
+
+        if (sort.equals(EventSort.EVENT_DATE)) { // Сортировка по дате события от ближайших по возрастанию
+            sql.append("ORDER BY e.event_date ");
+        }
+
+        sql.append("OFFSET ? LIMIT ?");
+        args.add(from);
+        argTypes.add(Types.INTEGER);
+        args.add(size);
+        argTypes.add(Types.INTEGER);
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                args.toArray(),
+                argTypes.stream().mapToInt(Integer::intValue).toArray(),
+                (rs, rowNum) -> eventFromDb(rs));
+    }
+
+    private StringBuilder getSqlBuilder() {
+        return new StringBuilder(
                 "SELECT " +
                         "e.id as e_id, " +
                         "e.title as e_title, " +
@@ -57,62 +214,11 @@ public class EventDAO {
                         "u.id as u_id, " +
                         "u.name as u_name, " +
                         "u.email as u_email, " +
-                        "u.created as u_created" +
-                " FROM events AS e");
-
-        sql.append(" LEFT OUTER JOIN categories AS c on e.category_id = c.id");
-        sql.append(" LEFT OUTER JOIN users AS u ON e.creator = u.id");
-        sql.append(" WHERE true");
-
-        if (users != null && !users.isEmpty()) {
-            sql.append(" AND e.creator = ANY(ARRAY[?])");
-            args.add(users);
-            argTypes.add(Types.BIGINT);
-        }
-
-        if (states!= null && !states.isEmpty()) {
-            sql.append(" AND e.status = ANY (ARRAY[?])");
-            args.add(states);
-            argTypes.add(Types.VARCHAR);
-        }
-
-        if (categories!= null && !categories.isEmpty()) {
-            sql.append(" AND e.category_id = ANY(ARRAY[?])");
-            args.add(categories);
-            argTypes.add(Types.INTEGER);
-        }
-
-        if (rangeStart != null) {
-            if (rangeEnd != null) {
-                sql.append( " AND e.event_date BETWEEN ? AND ?");
-                args.add(rangeStart);
-                argTypes.add(Types.TIMESTAMP);
-                args.add(rangeEnd);
-                argTypes.add(Types.TIMESTAMP);
-            } else {
-                sql.append(" AND e.event_date AFTER ?");
-                args.add(rangeStart);
-                argTypes.add(Types.TIMESTAMP);
-            }
-        } else if (rangeEnd != null) {
-            sql.append(" AND e.event_date BEFORE ?");
-            args.add(rangeEnd);
-            argTypes.add(Types.TIMESTAMP);
-        }
-
-        sql.append(" OFFSET ? LIMIT ?");
-        args.add(from);
-        argTypes.add(Types.INTEGER);
-        args.add(size);
-        argTypes.add(Types.INTEGER);
-
-        return jdbcTemplate.query(
-                sql.toString(),
-                args.toArray(),
-                argTypes.stream().mapToInt(Integer::intValue).toArray(),
-                (rs, rowNum) -> eventFromDb(rs));
+                        "u.created as u_created " +
+                        "FROM events AS e " +
+                        "LEFT OUTER JOIN categories AS c on e.category_id = c.id " +
+                        "LEFT OUTER JOIN users AS u ON e.creator = u.id ");
     }
-
     private Event eventFromDb(ResultSet rs) throws SQLException {
 
         return new Event(

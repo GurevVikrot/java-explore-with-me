@@ -56,7 +56,7 @@ public class DbParticipationService implements ParticipationService {
      * Cогласование участия в событии.
      * Если для события лимит заявок равен 0 или отключена пре-модерация заявок, то подтверждение заявок не требуется
      * Нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие
-     * Усли при подтверждении данной заявки, лимит заявок для события исчерпан, то все неподтверждённые заявки
+     * Если при подтверждении данной заявки, лимит заявок для события исчерпан, то все неподтверждённые заявки
      * необходимо отклонить
      *
      * @param userId  Id владельца
@@ -75,7 +75,7 @@ public class DbParticipationService implements ParticipationService {
 
         Event event = participation.getEvent();
         int participantsFact = participationRepository.getSumByEventIdAndStatusIs(
-                eventId, ParticipantStatus.CONFIRMED);
+                eventId, ParticipantStatus.CONFIRMED.toString()).orElse(0);
 
         if (event.getParticipantLimit() == 0 || !event.isRequestModeration()) {
             throw new ValidationException("Модерация запросов на участия к данному событию не требуется");
@@ -93,7 +93,7 @@ public class DbParticipationService implements ParticipationService {
             // Если количество участников достигло максимума, с учетом текущего, то отклоняем все оставшиеся
             if (event.getParticipantLimit() == participantsFact - 1) {
                 participationRepository.changeParticipantsStatusOfEvent(
-                        eventId, ParticipantStatus.REJECTED.toString(), ParticipantStatus.PENDING.toString());
+                        eventId, ParticipantStatus.CANCELED.toString(), ParticipantStatus.PENDING.toString());
             }
 
         } else { // Иначе задаем статус REJECTED
@@ -141,8 +141,9 @@ public class DbParticipationService implements ParticipationService {
             throw new ValidationException("Инициатор события не может добавить запрос на участие в своём событии");
         } else if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
             throw new ValidationException("Нельзя участвовать в неопубликованном событии");
-        } else if (event.getParticipantLimit() == participationRepository.getSumByEventIdAndStatusIs(
-                eventId, ParticipantStatus.CONFIRMED)) {
+        } else if (event.getParticipantLimit() >
+                0 && event.getParticipantLimit() == participationRepository.getSumByEventIdAndStatusIs(
+                eventId, ParticipantStatus.CONFIRMED.toString()).orElse(0)) {
             throw new ValidationException("Лимит запросов на участие привышен");
         }
 
@@ -171,7 +172,7 @@ public class DbParticipationService implements ParticipationService {
            throw new ValidationException("Отменить участие может только владелец запроса");
         }
 
-        participation.setStatus(ParticipantStatus.REJECTED);
+        participation.setStatus(ParticipantStatus.CANCELED);
 
         return participationMapper.toParticipationDto(participationRepository.save(participation));
     }

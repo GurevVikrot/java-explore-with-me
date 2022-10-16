@@ -19,58 +19,14 @@ public class BaseClient {
         this.rest = rest;
     }
 
-    protected ResponseEntity<Object> get(String path) {
-        return get(path, null);
-    }
-
     protected ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {
         return makeAndSendRequest(HttpMethod.GET, path, parameters, null);
     }
 
     protected <T> ResponseEntity<Object> post(String path, T body) {
-        return post(path, null, body);
-    }
+        return makeAndSendRequest(HttpMethod.POST, path, null, body);
 
-    protected <T> ResponseEntity<Object> post(String path, @Nullable Map<String, Object> parameters, T body) {
-        return makeAndSendRequest(HttpMethod.POST, path, parameters, body);
     }
-
-    protected <T> ResponseEntity<Object> put(String path, T body) {
-        return put(path, null, body);
-    }
-
-    protected <T> ResponseEntity<Object> put(String path, @Nullable Map<String, Object> parameters, T body) {
-        return makeAndSendRequest(HttpMethod.PUT, path, parameters, body);
-    }
-
-    protected <T> ResponseEntity<Object> patch(String path, T body) {
-        return patch(path, null, body);
-    }
-
-    protected <T> ResponseEntity<Object> patch(String path) {
-        return patch(path, null, null);
-    }
-
-    protected <T> ResponseEntity<Object> patch(String path, Map<String, Object> parameters) {
-        return patch(path, parameters, null);
-    }
-
-    protected <T> ResponseEntity<Object> patch(String path, @Nullable Map<String, Object> parameters, T body) {
-        return makeAndSendRequest(HttpMethod.PATCH, path, parameters, body);
-    }
-
-    protected ResponseEntity<Object> delete(String path) {
-        return delete(path, null);
-    }
-
-    protected ResponseEntity<Object> delete(String path, long userId) {
-        return delete(path, null);
-    }
-
-    protected ResponseEntity<Object> delete(String path, @Nullable Map<String, Object> parameters) {
-        return makeAndSendRequest(HttpMethod.DELETE, path, parameters, null);
-    }
-
     private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method,
                                                       String path,
                                                       @Nullable Map<String, Object> parameters,
@@ -78,7 +34,7 @@ public class BaseClient {
         HttpEntity<T> requestEntity = new HttpEntity<>(body);
 
         ResponseEntity<Object> serverResponse;
-        // тут поломка при сохранении статистики
+
         try {
             if (parameters != null) {
                 serverResponse = rest.exchange(path, method, requestEntity, Object.class, parameters);
@@ -90,10 +46,10 @@ public class BaseClient {
             return null;
         }
 
-        return prepareGatewayResponse(serverResponse);
+        return prepareResponse(serverResponse);
     }
 
-    private static ResponseEntity<Object> prepareGatewayResponse(ResponseEntity<Object> response) {
+    private static ResponseEntity<Object> prepareResponse(ResponseEntity<Object> response) {
         if (response.getStatusCode().is2xxSuccessful()) {
             log.info("Запрос к сервису статистики успешен");
             return response;

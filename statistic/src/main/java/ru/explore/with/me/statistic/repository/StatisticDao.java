@@ -1,6 +1,8 @@
 package ru.explore.with.me.statistic.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.statistic.model.ViewStats;
@@ -10,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class StatisticDao {
 
     private final JdbcTemplate jdbcTemplate;
@@ -23,18 +26,23 @@ public class StatisticDao {
         List<ViewStats> stats = new ArrayList<>();
 
         if (uris == null) {
-            return getHits(start,end, unique);
+            return getHits(start, end, unique);
         }
 
-        String sql = sqlHitBuilder(start, end,uris,unique);
-
-        for (String s : uris) {
-            stats.add(jdbcTemplate.queryForObject(sql,
-                    (rs, rowNum) -> new ViewStats(
-                            rs.getString("app"),
-                            rs.getString("uri"),
-                            rs.getInt("hits")),
-                    start, end, s));
+        String sql = sqlHitBuilder(start, end, uris, unique);
+        try {
+            for (String s : uris) {
+                stats.add(jdbcTemplate.queryForObject(sql,
+                        (rs, rowNum) -> new ViewStats(
+                                rs.getString("app"),
+                                rs.getString("uri"),
+                                rs.getInt("hits")),
+                        start, end, s));
+            }
+        } catch (EmptyResultDataAccessException exc) {
+            log.info("При поиске статистики не найдено подходящих объектов." +
+                    " Сервис запрашивает отсутствующую статистику");
+            return List.of();
         }
 
         return stats;

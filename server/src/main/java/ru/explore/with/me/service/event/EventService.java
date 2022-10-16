@@ -3,6 +3,7 @@ package ru.explore.with.me.service.event;
 import ru.explore.with.me.dto.event.EventFullDto;
 import ru.explore.with.me.dto.event.EventShortDto;
 import ru.explore.with.me.dto.event.RequestEventDto;
+import ru.explore.with.me.util.EventSort;
 import ru.explore.with.me.util.EventStatus;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,7 +25,16 @@ public interface EventService {
 
     EventFullDto cancelEventByCreator(long userId, long eventId);
 
-    List<EventShortDto> getPublicEvents(String text, Set<Integer> categories, boolean paid, String rangeStart, String rangeEnd, boolean onlyAvailable, String sort, int from, int size, HttpServletRequest request);
+    List<EventShortDto> getPublicEvents(String text,
+                                        List<Integer> categories,
+                                        boolean paid,
+                                        LocalDateTime rangeStart,
+                                        LocalDateTime rangeEnd,
+                                        boolean onlyAvailable,
+                                        EventSort sort,
+                                        int from,
+                                        int size,
+                                        HttpServletRequest request);
 
     EventFullDto editEventByAdmin(RequestEventDto eventDto, long eventId);
 

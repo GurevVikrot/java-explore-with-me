@@ -6,6 +6,7 @@ import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.util.ParticipantStatus;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ParticipationRepository extends JpaRepository<Participation, Long> {
     List<Participation> findAllByEventId(long eventId);
@@ -27,5 +28,11 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 
     boolean existsByUserIdAndEventId(long userId, long eventId);
 
-    int getSumByEventIdAndStatusIs(Long eventId, ParticipantStatus status);
+    @Query(value =
+            "SELECT SUM(event_id) " +
+                    "FROM  participants " +
+                    "WHERE event_id = ? " +
+                    "AND status = ? " +
+                    "GROUP BY (event_id)", nativeQuery = true )
+    Optional<Integer> getSumByEventIdAndStatusIs(Long eventId, String status);
 }

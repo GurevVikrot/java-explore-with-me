@@ -1,6 +1,7 @@
 package ru.explore.with.me.service.category;
 
 import ru.explore.with.me.dto.category.CategoryDto;
+import ru.explore.with.me.exeption.NoContentException;
 
 import java.util.List;
 
@@ -13,5 +14,5 @@ public interface CategoryService {
 
     List<CategoryDto> getCategories(int from, int size);
 
-    CategoryDto getCategory(int catId);
+    CategoryDto getCategory(int catId) throws NoContentException;
 }

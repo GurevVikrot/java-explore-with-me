@@ -20,4 +20,9 @@ public class AdviceHandler {
         log.error(exc.getMessage());
         return new ResponseEntity<>(exc.getMessage(), HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(NoContentException.class)
+    public ResponseEntity noContent(NoContentException exc) {
+        return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+    }
 }

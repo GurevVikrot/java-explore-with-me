@@ -1,5 +1,6 @@
 package ru.explore.with.me.statistic.service;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -41,7 +42,6 @@ public class DbStatisticService implements StatisticService{
 
     @Override
     public List<ViewStatsDto> getStatistic(String startCoded, String endCoded, List<String> uris, boolean unique) {
-        URLDecoder.decode(startCoded, StandardCharsets.UTF_8);
         LocalDateTime start = LocalDateTime.parse(
                 URLDecoder.decode(startCoded, StandardCharsets.UTF_8), CustomTimeFormatter.getFormatter());
         LocalDateTime end = LocalDateTime.parse(
