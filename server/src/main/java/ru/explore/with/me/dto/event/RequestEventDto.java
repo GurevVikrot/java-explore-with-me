@@ -3,7 +3,9 @@ package ru.explore.with.me.dto.event;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import ru.explore.with.me.util.Location;
 
+import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 
@@ -38,4 +40,6 @@ public class RequestEventDto {
     @PositiveOrZero
     private Integer participantLimit;
     private Boolean requestModeration;
+//    @Valid без валидации из-за тестов, в которых широта и долгота не связаны с реальным миром
+    private Location location;
 }

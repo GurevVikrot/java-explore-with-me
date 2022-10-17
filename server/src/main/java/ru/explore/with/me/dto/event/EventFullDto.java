@@ -9,7 +9,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import ru.explore.with.me.dto.category.CategoryDto;
 import ru.explore.with.me.dto.user.UserShortDto;
 import ru.explore.with.me.util.EventStatus;
+import ru.explore.with.me.util.Location;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,9 +37,10 @@ public class EventFullDto {
     private CategoryDto category;
     private boolean paid;
     private int cost;
-    private int confirmedRequest;
+    private int confirmedRequests;
     private int participantLimit;
     private boolean requestModeration;
     private EventStatus state;
     private int views;
+    private Location location;
 }

@@ -1,5 +1,6 @@
 package ru.explore.with.me.service.event;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +22,14 @@ import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.ParticipantStatus;
 
 import javax.servlet.http.HttpServletRequest;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class DbEventService implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
@@ -88,6 +92,9 @@ public class DbEventService implements EventService {
                                                int size) {
         return eventRepository.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size).stream()
                 .map(eventMapper::toEventFullDto)
+                .peek(event -> event.setConfirmedRequests(participationRepository
+                        .getSumByEventIdAndStatusIs(event.getId(), ParticipantStatus.CONFIRMED.toString())
+                        .orElse(0)))
                 .collect(Collectors.toList());
     }
 
@@ -217,26 +224,26 @@ public class DbEventService implements EventService {
         eventClient.sendStatistic(request);
 
         if (categories != null) {
-           categories = categories.stream().distinct().collect(Collectors.toList());
+            categories = categories.stream().distinct().collect(Collectors.toList());
         }
 
         if (text != null) {
-           text = text.trim();
+            text = text.trim();
         }
 
         List<EventShortDto> events = eventRepository.findAllByFilter(
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size).stream()
-                .peek(event -> event.getParticipations().stream()
-                        .filter(participant -> participant.getStatus().equals(ParticipantStatus.CONFIRMED))
-                        .collect(Collectors.toList()))
+                        text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size).stream()
                 .map(eventMapper::toShortEventDto)
+                .peek(event -> event.setConfirmedRequests(participationRepository
+                        .getSumByEventIdAndStatusIs(event.getId(), ParticipantStatus.CONFIRMED.toString())
+                        .orElse(0)))
                 .collect(Collectors.toList());
 
         // Сотрировка если по кол-ву просмотров
 
         if (sort.equals(EventSort.VIEWS)) {
             events = events.stream()
-                    .sorted((event1, event2) -> event1.getViews() - event2.getViews())
+                    .sorted(Comparator.comparingInt(EventShortDto::getViews))
                     .collect(Collectors.toList());
         }
 
@@ -283,9 +290,10 @@ public class DbEventService implements EventService {
     /**
      * Метод для получения обновленного объекта Event. Используется для обновления как пользовательских запросов,
      * так и админских
+     *
      * @param eventDto Дто объект события с новыми полями
-     * @param eventId Id события
-     * @param isUser Флаг, обновление от пользователя = true, от админа = false
+     * @param eventId  Id события
+     * @param isUser   Флаг, обновление от пользователя = true, от админа = false
      * @return Event
      */
     private Event updateEventFromDto(RequestEventDto eventDto, long eventId, boolean isUser) {
@@ -294,7 +302,7 @@ public class DbEventService implements EventService {
 
         // Пользователь не может обновить уже опубликованное событие
         // и не может выставить дату начала события раньше 2-ух часов от текущего момента
-        if (isUser) {
+        if (isUser && eventDto.getEventDate() != null) {
             checkEventDate(eventDto.getEventDate(), TIME_BEFORE_CREATE);
             if (event.getStatus().equals(EventStatus.PUBLISHED)) {
                 throw new ValidationException("Невозможно обновить опубликованное событие");
@@ -304,18 +312,26 @@ public class DbEventService implements EventService {
         if (eventDto.getTitle() != null) {
             event.setTitle(eventDto.getTitle().trim());
         }
+
         if (eventDto.getAnnotation() != null) {
             event.setAnnotation(eventDto.getAnnotation().trim());
         }
+
         if (eventDto.getDescription() != null) {
             event.setDescription(eventDto.getDescription().trim());
         }
+
         if (eventDto.getCategory() != 0) {
             event.setCategory(categoryRepository.findById(eventDto.getCategory()).orElseThrow(
                     () -> new NotFoundException("Категория не найдена")));
         }
+
         if (eventDto.getEventDate() != null) {
             event.setEventDate(eventDto.getEventDate());
+        }
+
+        if (eventDto.getPaid() != null) {
+            event.setPaid(eventDto.getPaid());
         }
 
         if (eventDto.getParticipantLimit() != null) {
@@ -329,8 +345,14 @@ public class DbEventService implements EventService {
 
                 // Если количество участников при обновлении уменьшено, то все запросы участия
                 // уходят на новое согласование в не зависимости от необходимости их одобрения
-                participationRepository.changeParticipantsStatusOfEvent(
-                        event.getId(), ParticipantStatus.PENDING.toString());
+                try {
+                    participationRepository.changeParticipantsStatusOfEvent(
+                            event.getId(), ParticipantStatus.PENDING.toString());
+                } catch (Exception e) {
+                    log.info("Во время попытки изменить сататусы запросов на участие в событии что-то пошло не так" +
+                            e.getMessage());
+                }
+
             }
         }
         // В случае если обновляется модерация в не зависимости true || false, все запросы уходят на пересогласование
@@ -338,8 +360,18 @@ public class DbEventService implements EventService {
         // в случае false одобрять сразу все бессмысленно по этой же причине
         if (eventDto.getRequestModeration() != null && event.getParticipantLimit() > 0) {
             event.setRequestModeration(eventDto.getRequestModeration());
-            participationRepository.changeParticipantsStatusOfEvent(
-                    event.getId(), ParticipantStatus.PENDING.toString());
+            try {
+                participationRepository.changeParticipantsStatusOfEvent(
+                        event.getId(), ParticipantStatus.PENDING.toString());
+            } catch (Exception e) {
+                log.info("Во время попытки изменить сататусы запросов на участие в событии что-то пошло не так" +
+                        e.getMessage());
+            }
+        }
+
+        if (eventDto.getLocation() != null) {
+            event.setLat(eventDto.getLocation().getLat());
+            event.setLon(eventDto.getLocation().getLon());
         }
 
         return event;

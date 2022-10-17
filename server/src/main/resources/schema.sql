@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS events
     request_moderation BOOLEAN                     NOT NULL,
     status             VARCHAR                     NOT NULL,
     created            TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    published          TIMESTAMP
+    published          TIMESTAMP,
+    lat                DECIMAL,
+    lon                DECIMAL
 );
 
 CREATE TABLE IF NOT EXISTS participants

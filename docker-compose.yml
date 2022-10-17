@@ -2,43 +2,45 @@ version: '3.1'
 services:
   stats-server:
     build: ./statistic
-    container_name: ewm-server
+    container_name: ewm-stat
     ports:
       - "9090:9090"
     environment:
-      - DB_NAME=explore_with_me
+      - DB_NAME=explore_with_me_statistic
       - POSTGRES_USER=Vitya
-      - POSTGRES_PASSWORD=popa
+      - POSTGRES_PASSWORD=Vitya
       - DB_HOST=stats-db
       - DB_PORT=5432
 
   stats-db:
     image: postgres:14-alpine
-    container_name: explore_db
-    ports:
-      - "6541:5432"
-    environment:
-      - POSTGRES_DB=explore_with_me
-      - POSTGRES_USER=Vitya
-      - POSTGRES_PASSWORD=popa
-
-  ewm-service:
-    ports:
-      - "8080:8080"
-    environment:
-      - EWM_STATS_URL=http://server:9090
-      - DB_NAME=explore_with_me
-      - POSTGRES_USER=Vitya
-      - POSTGRES_PASSWORD=popa
-      - DB_HOST=ewm-db
-      - DB_PORT=5432
-
-  ewm-db:
-    image: postgres:14-alpine
-    container_name: explore_stat_db
+    container_name: ewm_stats_db
     ports:
       - "6541:5432"
     environment:
       - POSTGRES_DB=explore_with_me_statistic
       - POSTGRES_USER=Vitya
-      - POSTGRES_PASSWORD=popa
+      - POSTGRES_PASSWORD=Vitya
+
+  ewm-service:
+    build: ./server
+    container_name: ewm-server
+    ports:
+      - "8080:8080"
+    environment:
+      - EWM_STATS_URL=http://stats-server:9090
+      - DB_NAME=explore_with_me_db
+      - POSTGRES_USER=Vitya
+      - POSTGRES_PASSWORD=Vitya
+      - DB_HOST=ewm-db
+      - DB_PORT=5432
+
+  ewm-db:
+    image: postgres:14-alpine
+    container_name: ewm_db
+    ports:
+      - "6542:5432"
+    environment:
+      - POSTGRES_DB=explore_with_me_db
+      - POSTGRES_USER=Vitya
+      - POSTGRES_PASSWORD=Vitya

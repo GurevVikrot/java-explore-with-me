@@ -4,10 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Where;
 import ru.explore.with.me.model.category.Category;
 import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.model.user.User;
+import ru.explore.with.me.util.Location;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -52,10 +54,8 @@ public class Event {
     private Category category;
 
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
+    @Where(clause = "status='CONFIRMED'")
     private List<Participation> participations;
-//    @JoinTable(name = "participants",
-//    )
-//    private List<Participation> participations;
 
     @Column(name = "participant_limit")
     private int participantLimit;
@@ -70,6 +70,12 @@ public class Event {
     @Column(name = "created", nullable = false)
     private LocalDateTime created;
 
-    @Column(name = "published")
+    @Column(name = "published", nullable = false)
     private LocalDateTime publishedOn;
+
+    @Column(name = "lat", nullable = false)
+    private float lat;
+
+    @Column(name = "lon")
+    private float lon;
 }

@@ -10,6 +10,7 @@ import ru.explore.with.me.mapper.category.CategoryMapper;
 import ru.explore.with.me.mapper.user.UserMapper;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.util.EventStatus;
+import ru.explore.with.me.util.Location;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,7 +45,8 @@ public class DefaultEventMapper implements EventMapper{
                 event.isPaid(),
                 event.getParticipations().size(),
                 event.getEventDate(),
-                getEventViews(event.getId(), event.getPublishedOn()));
+                getEventViews(event.getId(), event.getPublishedOn()),
+                new Location(event.getLat(), event.getLon()));
     }
 
     @Override
@@ -64,7 +66,9 @@ public class DefaultEventMapper implements EventMapper{
                 eventFullDto.isRequestModeration(),
                 null,
                 null,
-                null);
+                null,
+                eventFullDto.getLocation().getLat(),
+                eventFullDto.getLocation().getLon());
     }
 
     @Override
@@ -85,7 +89,8 @@ public class DefaultEventMapper implements EventMapper{
                 event.getParticipantLimit(),
                 event.isRequestModeration(),
                 event.getStatus(),
-                getEventViews(event.getId(), event.getPublishedOn()));
+                getEventViews(event.getId(), event.getPublishedOn()),
+                new Location(event.getLat(), event.getLon()));
     }
 
     @Override
@@ -104,7 +109,9 @@ public class DefaultEventMapper implements EventMapper{
                 requestEventDto.getRequestModeration(),
                 EventStatus.PENDING,
                 LocalDateTime.now(),
-                null);
+                null,
+                requestEventDto.getLocation().getLat(),
+                requestEventDto.getLocation().getLon());
     }
 
     private int getEventViews(long eventId, LocalDateTime start) {

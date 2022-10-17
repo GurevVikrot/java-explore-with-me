@@ -208,6 +208,8 @@ public class EventDAO {
                         "e.status as e_status, " +
                         "e.created as e_created, " +
                         "e.published as e_published, " +
+                        "e.lat as e_lat, " +
+                        "e.lon as e_lon, " +
                         "c.id as c_id, " +
                         "c.name as c_name, " +
                         "c.description as c_description, " +
@@ -243,7 +245,10 @@ public class EventDAO {
                 rs.getBoolean("e_request_moderation"),
                 EventStatus.valueOf(rs.getString("e_status")),
                 rs.getTimestamp("e_created").toLocalDateTime(),
-                rs.getTimestamp("e_published") == null? null : rs.getTimestamp("e_published").toLocalDateTime()
+                rs.getTimestamp("e_published") == null ?
+                        null : rs.getTimestamp("e_published").toLocalDateTime(),
+                rs.getFloat("e_lat"),
+                rs.getFloat("e_lon")
         );
     }
 }
