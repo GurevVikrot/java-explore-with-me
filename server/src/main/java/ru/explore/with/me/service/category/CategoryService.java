@@ -13,5 +13,5 @@ public interface CategoryService {
 
     List<CategoryDto> getCategories(int from, int size);
 
-    CategoryDto getCategory(int catId) throws NoContentException;
+    CategoryDto getCategory(int catId);
 }

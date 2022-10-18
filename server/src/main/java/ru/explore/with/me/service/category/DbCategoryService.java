@@ -26,6 +26,7 @@ public class DbCategoryService implements CategoryService {
 
     /**
      * Создание категории
+     *
      * @param categoryDto Dto объект категории
      * @return categoryDto
      */
@@ -37,12 +38,13 @@ public class DbCategoryService implements CategoryService {
 
     /**
      * Обновление категории
+     *
      * @param categoryDto Dto объект категории
      * @return categoryDto
      */
     @Override
     public CategoryDto updateCategory(CategoryDto categoryDto) {
-        if(!repository.existsById(categoryDto.getId())) {
+        if (!repository.existsById(categoryDto.getId())) {
             throw new ValidationException("Категория не найдена");
         }
 
@@ -52,12 +54,13 @@ public class DbCategoryService implements CategoryService {
 
     /**
      * Удаление категории
+     *
      * @param catId Id категории
      * @return String статус удаления
      */
     @Override
     public String deleteCategory(int catId) {
-        if(repository.existsById(catId)) {
+        if (repository.existsById(catId)) {
             repository.deleteById(catId);
             return "Категория удалена";
         }
@@ -67,13 +70,14 @@ public class DbCategoryService implements CategoryService {
 
     /**
      * Получение всех категорий.
+     *
      * @param from Сколько строк нужно пропустить
      * @param size Размер страницы
      * @return List CategoryDto Список категорий
      */
     @Override
     public List<CategoryDto> getCategories(int from, int size) {
-        Pageable page = PageRequest.of(from/size,size);
+        Pageable page = PageRequest.of(from / size, size);
         return repository.findAll(page).stream()
                 .map(categoryMapper::toCategoryDto)
                 .collect(Collectors.toList());
