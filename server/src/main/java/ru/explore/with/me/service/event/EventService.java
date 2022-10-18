@@ -41,4 +41,6 @@ public interface EventService {
     EventFullDto publishEvent(long eventId);
 
     EventFullDto rejectEvent(long eventId);
+
+    List<EventShortDto> getUserEventsToSub(long subId, long userId);
 }

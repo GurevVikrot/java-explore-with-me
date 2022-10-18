@@ -2,15 +2,17 @@ package ru.explore.with.me.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.explore.with.me.dto.event.EventFullDto;
 import ru.explore.with.me.dto.event.EventShortDto;
 import ru.explore.with.me.dto.event.RequestEventDto;
 import ru.explore.with.me.dto.participation.ParticipationRequestDto;
+import ru.explore.with.me.dto.user.UserShortDto;
 import ru.explore.with.me.service.event.EventService;
 import ru.explore.with.me.service.participation.ParticipationService;
+import ru.explore.with.me.service.user.UserService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
@@ -23,16 +25,18 @@ import java.util.List;
 public class UserController {
     private final EventService eventService;
     private final ParticipationService participationService;
+    private final UserService userService;
 
     @Autowired
     public UserController(EventService eventService,
-                          ParticipationService participationService) {
+                          ParticipationService participationService,
+                          UserService userService) {
         this.eventService = eventService;
         this.participationService = participationService;
+        this.userService = userService;
     }
 
     @PostMapping("/{userId}/events")
-    //    @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@PathVariable @Positive long userId,
                                     @RequestBody @Valid RequestEventDto requestEventDto) {
         log.info("Пользователь id = {}. Создание события: {}", userId, requestEventDto);
@@ -107,8 +111,41 @@ public class UserController {
 
     @PatchMapping("/{userId}/requests/{requestId}/cancel")
     public ParticipationRequestDto cancelParticipation(@PathVariable @Positive long userId,
-                                                    @PathVariable @Positive long requestId) {
+                                                       @PathVariable @Positive long requestId) {
         log.info("Отмена запроса id = {} на участие в событии от пользователя id = {}", requestId, userId);
         return participationService.cancelParticipation(userId, requestId);
+    }
+
+    @PostMapping("/{subId}/subscribes/{userId}")
+    public ResponseEntity<Object> subscribeOnUser(@PathVariable @Positive long subId,
+                                                  @PathVariable @Positive long userId) {
+        log.info("Запрос подписки от пользователя id {} на пользователя id {}", subId, userId);
+        return userService.subOnUser(subId, userId);
+    }
+
+    @DeleteMapping("/{subId}/subscribes/{userId}")
+    public ResponseEntity<Object> unsubscribeOnUser(@PathVariable @Positive long subId,
+                                                    @PathVariable @Positive long userId) {
+        log.info("Запрос отписки от пользователя id {} на пользователя id {}", subId, userId);
+        return userService.unsubOnUser(subId, userId);
+    }
+
+    @GetMapping("/{subId}/subscribes")
+    public List<UserShortDto> getAuthorsToSub(@PathVariable @Positive long subId) {
+        log.info("Запрос получения списка подписок пользователя id = {}", subId);
+        return userService.getSubscribes(subId);
+    }
+
+    @GetMapping("/subscribes/{userId}")
+    public List<UserShortDto> getSubscribers(@PathVariable @Positive long userId) {
+        log.info("Запрос получения списка подписок пользователя id = {}", userId);
+        return userService.getUserSubscribers(userId);
+    }
+
+    @GetMapping("/{subId}/subscribes/{userId}/events")
+    public List<EventShortDto> getAuthorEvents(@PathVariable @Positive long subId,
+                                               @PathVariable @Positive long userId) {
+        log.info("Запрос получения подпищиком id = {} событий пользователя id = {}", subId, userId);
+        return eventService.getUserEventsToSub(subId, userId);
     }
 }

@@ -3,6 +3,7 @@ package ru.explore.with.me.repository.event;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import ru.explore.with.me.dto.event.EventShortDto;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.util.EventSort;
@@ -77,5 +78,9 @@ public class EventRepository {
                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size).stream()
                .peek((e) -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
                .collect(Collectors.toList());
+    }
+
+    public List<Event> findAllByCreatorAndStatus(long userId, String status) {
+        return jpaRepository.findAllByCreatorAndStatus(userId, status);
     }
 }

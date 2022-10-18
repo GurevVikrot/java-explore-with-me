@@ -13,16 +13,17 @@ import ru.explore.with.me.exeption.NotFoundException;
 import ru.explore.with.me.exeption.ValidationException;
 import ru.explore.with.me.mapper.event.EventMapper;
 import ru.explore.with.me.model.event.Event;
+import ru.explore.with.me.model.user.subscribe.SubscribeId;
 import ru.explore.with.me.repository.category.CategoryRepository;
 import ru.explore.with.me.repository.event.EventRepository;
 import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.repository.user.UserRepository;
+import ru.explore.with.me.repository.user.subscribe.SubscribeRepository;
 import ru.explore.with.me.util.EventSort;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.ParticipantStatus;
 
 import javax.servlet.http.HttpServletRequest;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -34,8 +35,8 @@ public class DbEventService implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
-
     private final ParticipationRepository participationRepository;
+    private final SubscribeRepository subscribeRepository;
     private final EventMapper eventMapper;
     private final EventClient eventClient;
     // Количество часов, на количество которых дата начала события должна быть позже
@@ -48,12 +49,14 @@ public class DbEventService implements EventService {
                           UserRepository userRepository,
                           CategoryRepository categoryRepository,
                           ParticipationRepository participationRepository,
+                          SubscribeRepository subscribeRepository,
                           EventMapper eventMapper,
                           EventClient eventClient) {
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
         this.participationRepository = participationRepository;
+        this.subscribeRepository = subscribeRepository;
         this.eventMapper = eventMapper;
         this.eventClient = eventClient;
     }
@@ -285,6 +288,17 @@ public class DbEventService implements EventService {
 
         event.setStatus(EventStatus.CANCELED);
         return eventMapper.toEventFullDto(eventRepository.save(event));
+    }
+
+    @Override
+    public List<EventShortDto> getUserEventsToSub(long subId, long userId) {
+        if (!subscribeRepository.existsById(new SubscribeId(userId, subId))) {
+            throw new NotFoundException("Вы не являетесь подпищиком пользователя");
+        }
+
+        return eventRepository.findAllByCreatorAndStatus(userId, EventStatus.PUBLISHED.toString()).stream()
+                .map(eventMapper::toShortEventDto)
+                .collect(Collectors.toList());
     }
 
     /**

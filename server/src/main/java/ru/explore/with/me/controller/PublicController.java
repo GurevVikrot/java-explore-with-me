@@ -2,12 +2,9 @@ package ru.explore.with.me.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import ru.explore.with.me.client.event.EventClient;
+import org.springframework.web.bind.annotation.*;
 import ru.explore.with.me.dto.category.CategoryDto;
 import ru.explore.with.me.dto.compilation.CompilationDto;
 import ru.explore.with.me.dto.event.EventFullDto;
@@ -15,6 +12,7 @@ import ru.explore.with.me.dto.event.EventShortDto;
 import ru.explore.with.me.service.category.CategoryService;
 import ru.explore.with.me.service.compilation.CompilationService;
 import ru.explore.with.me.service.event.EventService;
+import ru.explore.with.me.service.user.UserService;
 import ru.explore.with.me.util.EventSort;
 
 import javax.servlet.http.HttpServletRequest;
@@ -22,15 +20,12 @@ import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 @RestController
 @Validated
 @Slf4j
 public class PublicController {
-
     private final EventService eventService;
-
     private final CompilationService compilationService;
     private final CategoryService categoryService;
 
@@ -116,5 +111,4 @@ public class PublicController {
         log.info("Публичный запрос на получение категории по id = {}", catId);
         return categoryService.getCategory(catId);
     }
-
 }
