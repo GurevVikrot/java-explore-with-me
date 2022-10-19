@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class AdviceHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<String> validationException(ValidationException exc) {
-      log.error(exc.getMessage());
-      return new ResponseEntity<>(exc.getMessage(), HttpStatus.BAD_REQUEST);
+        log.error(exc.getMessage());
+        return new ResponseEntity<>(exc.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(NotFoundException.class)

@@ -9,6 +9,9 @@ import ru.explore.with.me.model.compilation.Compilation;
 
 import java.util.stream.Collectors;
 
+/**
+ * Реализация интерфейса маппинга подборок событий для работы с БД
+ */
 @Component
 public class DefaultCompilationMapper implements CompilationMapper {
     private final EventMapper eventMapper;
@@ -20,8 +23,9 @@ public class DefaultCompilationMapper implements CompilationMapper {
 
     /**
      * Преобразует NewCompilationDto в Compilation.
-     * Объекс Compilation возвращается с id == null и events == null.
+     * Объект Compilation возвращается с id == null и events == null.
      * events требуют заполнения в классе сервиса.
+     *
      * @param newCompilationDto Dto объект новой подборки
      * @return Compilation Объект подборки
      */
@@ -33,11 +37,6 @@ public class DefaultCompilationMapper implements CompilationMapper {
                 null);
     }
 
-    /**
-     * Преобразует Compilation в CompilationDto
-     * @param compilation Объект Подборки
-     * @return CompilationDto Dto объект подборки
-     */
     @Override
     public CompilationDto toCompilationDto(Compilation compilation) {
         return new CompilationDto(

@@ -1,4 +1,4 @@
-package ru.explore.with.me.client.event;
+package ru.explore.with.me.client.event.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

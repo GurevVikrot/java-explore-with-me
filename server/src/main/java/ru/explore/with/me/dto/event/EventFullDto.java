@@ -11,10 +11,11 @@ import ru.explore.with.me.dto.user.UserShortDto;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.Location;
 
-import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.List;
 
+/**
+ * Dto объект с подробной информацией о событии для ответа
+ */
 @Getter
 @Setter
 @AllArgsConstructor

@@ -9,6 +9,9 @@ import ru.explore.with.me.dto.event.EventShortDto;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
+/**
+ * Dto объект подборки событий. Используется для ответа
+ */
 @Getter
 @Setter
 @AllArgsConstructor

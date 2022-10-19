@@ -7,6 +7,9 @@ import ru.explore.with.me.model.user.User;
 
 import java.util.List;
 
+/**
+ * Jpa репозиторий пользователей
+ */
 public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllByIdIn(List<Long> id, Pageable pageable);
 

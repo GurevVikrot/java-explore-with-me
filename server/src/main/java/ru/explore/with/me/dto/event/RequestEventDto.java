@@ -5,13 +5,11 @@ import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.explore.with.me.util.Location;
 
-import javax.validation.Valid;
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
 
 /**
  * Dto класс события с валидацией полей. Используется при создании новых событий и обновлении.
- * В Случае создания необходимо отдельно валидировать поля eventId и requestModeration.
  * В Случае обновления необходимо отдельно валидировать поле eventId
  */
 @Getter
@@ -40,6 +38,6 @@ public class RequestEventDto {
     @PositiveOrZero
     private Integer participantLimit;
     private Boolean requestModeration;
-//    @Valid без валидации из-за тестов, в которых широта и долгота не связаны с реальным миром
+    //    @Valid без валидации из-за тестов, в которых широта и долгота не связаны с реальным миром
     private Location location;
 }

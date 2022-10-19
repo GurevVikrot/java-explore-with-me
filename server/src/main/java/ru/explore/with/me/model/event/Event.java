@@ -7,14 +7,16 @@ import lombok.Setter;
 import org.hibernate.annotations.Where;
 import ru.explore.with.me.model.category.Category;
 import ru.explore.with.me.model.participation.Participation;
-import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.model.user.User;
-import ru.explore.with.me.util.Location;
+import ru.explore.with.me.util.EventStatus;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Entity класс для событий
+ */
 @Getter
 @Setter
 @NoArgsConstructor

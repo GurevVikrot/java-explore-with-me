@@ -1,6 +1,5 @@
 package ru.explore.with.me.client.event;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -8,6 +7,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.explore.with.me.client.BaseClient;
+import ru.explore.with.me.client.event.model.EventViewStats;
 import ru.explore.with.me.client.mapper.EventHitMapper;
 
 import javax.servlet.http.HttpServletRequest;

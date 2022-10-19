@@ -8,6 +8,10 @@ import ru.explore.with.me.model.user.User;
 
 import javax.persistence.*;
 
+/**
+ * Entity класс для подписки на пользователя.
+ * Ключ таблицы генерируемый из двух полей id подпищика и автора
+ */
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor

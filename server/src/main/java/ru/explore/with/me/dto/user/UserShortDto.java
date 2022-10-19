@@ -7,6 +7,9 @@ import lombok.Setter;
 
 import javax.validation.constraints.NotNull;
 
+/**
+ * Dto класс с краткой информацией о пользователе. Используется для ответа
+ */
 @Getter
 @Setter
 @AllArgsConstructor

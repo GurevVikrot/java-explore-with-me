@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import ru.explore.with.me.client.dto.EndpointHitDto;
-import ru.explore.with.me.client.event.EventViewStats;
+import ru.explore.with.me.client.event.model.EventViewStats;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;

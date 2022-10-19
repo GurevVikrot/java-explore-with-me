@@ -15,8 +15,11 @@ import ru.explore.with.me.util.Location;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Реализация интерфейса мапера событий для БД
+ */
 @Component
-public class DefaultEventMapper implements EventMapper{
+public class DefaultEventMapper implements EventMapper {
     private final UserMapper userMapper;
     private final CategoryMapper categoryMapper;
     private final EventClient eventClient;
@@ -30,7 +33,8 @@ public class DefaultEventMapper implements EventMapper{
 
     /**
      * Преобразование Event в EventShortDto
-     * Заполнение поля views требуется в сервисах, использующих класс.
+     * Заполнение поля views происходит через клиент обращающийся к сервису статистики.
+     *
      * @param event объект события
      * @return EventShortDto
      */
@@ -49,28 +53,13 @@ public class DefaultEventMapper implements EventMapper{
                 new Location(event.getLat(), event.getLon()));
     }
 
-    @Override
-    public Event toEvent(EventFullDto eventFullDto) {
-        return new Event(
-                eventFullDto.getId() == 0? null : eventFullDto.getId(),
-                eventFullDto.getTitle(),
-                eventFullDto.getAnnotation(),
-                eventFullDto.getDescription(),
-                null,
-                eventFullDto.getEventDate(),
-                eventFullDto.isPaid(),
-                eventFullDto.getCost(),
-                null,
-                null,
-                eventFullDto.getParticipantLimit(),
-                eventFullDto.isRequestModeration(),
-                null,
-                null,
-                null,
-                eventFullDto.getLocation().getLat(),
-                eventFullDto.getLocation().getLon());
-    }
-
+    /**
+     * Преобразование в полную форму Dto.
+     * Заполнение поля views происходит через клиент обращающийся к сервису статистики.
+     *
+     * @param event Объект события
+     * @return EventFullDto
+     */
     @Override
     public EventFullDto toEventFullDto(Event event) {
         return new EventFullDto(
@@ -93,6 +82,14 @@ public class DefaultEventMapper implements EventMapper{
                 new Location(event.getLat(), event.getLon()));
     }
 
+    /**
+     * Преобразование Dto в новое событие.
+     * Поля creator, category требуют заполнения в сервисе.
+     * Поле publishedOn заполняется только при публикации события.
+     *
+     * @param requestEventDto Dto объект
+     * @return Event
+     */
     @Override
     public Event toNewEvent(RequestEventDto requestEventDto) {
         return new Event(null,
@@ -114,6 +111,14 @@ public class DefaultEventMapper implements EventMapper{
                 requestEventDto.getLocation().getLon());
     }
 
+    /**
+     * Метод получения количества уникальных просмотров события.
+     * Если событие не опубликовано, возвращается 0
+     *
+     * @param eventId id события
+     * @param start   Дата и время публикации события
+     * @return int
+     */
     private int getEventViews(long eventId, LocalDateTime start) {
         if (start == null) {
             return 0;

@@ -8,8 +8,8 @@ import ru.explore.with.me.mapper.participation.ParticipationMapper;
 import ru.explore.with.me.model.event.Event;
 import ru.explore.with.me.model.participation.Participation;
 import ru.explore.with.me.model.user.User;
-import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.repository.event.EventRepository;
+import ru.explore.with.me.repository.participation.ParticipationRepository;
 import ru.explore.with.me.repository.user.UserRepository;
 import ru.explore.with.me.util.EventStatus;
 import ru.explore.with.me.util.ParticipantStatus;
@@ -169,7 +169,7 @@ public class DbParticipationService implements ParticipationService {
                 () -> new NotFoundException("Запрос на участие в событии не найден"));
 
         if (participation.getUser().getId() != userId) {
-           throw new ValidationException("Отменить участие может только владелец запроса");
+            throw new ValidationException("Отменить участие может только владелец запроса");
         }
 
         participation.setStatus(ParticipantStatus.CANCELED);

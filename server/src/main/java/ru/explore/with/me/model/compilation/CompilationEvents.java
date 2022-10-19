@@ -8,6 +8,10 @@ import ru.explore.with.me.model.event.Event;
 
 import javax.persistence.*;
 
+/**
+ * Entity класс для связующей таблицы категорий и событий в отношении многие ко многим.
+ * Ключ таблицы генерируемый из полей id категорий и событий
+ */
 @Getter
 @Setter
 @AllArgsConstructor

@@ -11,6 +11,9 @@ import ru.explore.with.me.util.ParticipantStatus;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
+/**
+ * Dto класс участия в событии. Используется для ответа
+ */
 @Getter
 @Setter
 @AllArgsConstructor

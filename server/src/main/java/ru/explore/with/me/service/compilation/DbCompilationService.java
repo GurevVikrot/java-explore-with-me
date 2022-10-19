@@ -113,7 +113,8 @@ public class DbCompilationService implements CompilationService {
 
     /**
      * Закрепление/открепление подборки на главной странице в зависимости от передаваемого параметра.
-     * @param pin статус для измемения. true - закрепить, false - откепить
+     *
+     * @param pin    статус для измемения. true - закрепить, false - откепить
      * @param compId Id подборки
      * @return String or NotFoundException
      */
@@ -141,17 +142,18 @@ public class DbCompilationService implements CompilationService {
 
     /**
      * Получение подборок событий в зависимости от параметра pinned с пагинацией.
+     *
      * @param pinned параметр выборки.
-     * pinned == null - Все подборки;
-     * pinned == true - Закрепленные подборки;
-     * pinned == false - Не закрепленные подборки.
-     * @param from Сколько элементов необходимо пропустить
-     * @param size Сколько элементов отображаются на странице
+     *               pinned == null - Все подборки;
+     *               pinned == true - Закрепленные подборки;
+     *               pinned == false - Не закрепленные подборки.
+     * @param from   Сколько элементов необходимо пропустить
+     * @param size   Сколько элементов отображаются на странице
      * @return List<CompilationDto> Список подборок
      */
     @Override
     public List<CompilationDto> getCompilations(Boolean pinned, int from, int size) {
-        Pageable page = PageRequest.of(from/size,size);
+        Pageable page = PageRequest.of(from / size, size);
         List<Compilation> compilations;
 
         if (pinned == null) {
@@ -168,6 +170,7 @@ public class DbCompilationService implements CompilationService {
     /**
      * Получение подборки по ее id. В случае отсутсвия подборки с заданым id
      * выбрасывается исключение.
+     *
      * @param compId Id подборки
      * @return CompilationDto or NotFoundException
      */

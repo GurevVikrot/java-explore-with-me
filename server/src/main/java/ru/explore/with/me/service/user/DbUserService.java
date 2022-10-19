@@ -1,7 +1,6 @@
 package ru.explore.with.me.service.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,12 +16,13 @@ import ru.explore.with.me.model.user.subscribe.SubscribeId;
 import ru.explore.with.me.repository.user.UserRepository;
 import ru.explore.with.me.repository.user.subscribe.SubscribeRepository;
 
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация интерфейса сервиса пользователей работающая с БД
+ */
 @Service
 public class DbUserService implements UserService {
     private final UserMapper userMapper;
@@ -39,11 +39,6 @@ public class DbUserService implements UserService {
         this.subRepository = subRepository;
     }
 
-    /**
-     * Создание нового пользователя, осущесвляется Админ
-     * @param userDto Dto объект пользователя для создания
-     * @return userDto
-     */
     @Override
     public UserDto createUser(UserDto userDto) {
         if (userDto == null) {
@@ -56,20 +51,11 @@ public class DbUserService implements UserService {
         return userMapper.toUserDto(userRepository.save(user));
     }
 
-    /**
-     * Получение списка пользователей с пагинацией.
-     * При пустом списке ids возвращает всех пользователей
-     * @param ids список id запрашиваемых пользователей
-     * @param from элемент с которого нужно начать для формирования списка
-     * @param size количество элементов в возвращаемом списке
-     * @return List UserDto
-     */
-
     @Override
     public List<UserDto> getUsers(List<Long> ids, int from, int size) {
         Pageable pageable = PageRequest.of(from / size, size);
 
-        if (ids.isEmpty()) {
+        if (ids == null || ids.isEmpty()) {
             return userRepository.findAll(pageable).stream()
                     .map(userMapper::toUserDto)
                     .collect(Collectors.toList());
@@ -80,11 +66,6 @@ public class DbUserService implements UserService {
         }
     }
 
-    /**
-     * Удаление пользователя. В случае отсутствия пользователя выбрасывается исключение.
-     * @param userId id удаляемого пользователя
-     * @return String or NotFoundExсeption
-     */
     @Override
     public String deleteUser(long userId) {
         if (userRepository.existsById(userId)) {

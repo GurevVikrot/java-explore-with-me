@@ -7,14 +7,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.explore.with.me.dto.category.CategoryDto;
-import ru.explore.with.me.dto.user.UserDto;
 import ru.explore.with.me.dto.user.UserShortDto;
 import ru.explore.with.me.util.Location;
 
-import javax.validation.Valid;
 import java.time.LocalDateTime;
-import java.util.List;
 
+/**
+ * Dto объект с краткой информацией о событии для ответа
+ */
 @Getter
 @Setter
 @AllArgsConstructor

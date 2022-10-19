@@ -6,6 +6,9 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+/**
+ * Dto класс категории. Заложена валидация.
+ */
 @Getter
 @Setter
 @AllArgsConstructor

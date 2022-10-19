@@ -5,11 +5,9 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 public class BaseClient {
@@ -17,36 +15,6 @@ public class BaseClient {
 
     public BaseClient(RestTemplate rest) {
         this.rest = rest;
-    }
-
-    protected ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {
-        return makeAndSendRequest(HttpMethod.GET, path, parameters, null);
-    }
-
-    protected <T> ResponseEntity<Object> post(String path, T body) {
-        return makeAndSendRequest(HttpMethod.POST, path, null, body);
-
-    }
-    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method,
-                                                      String path,
-                                                      @Nullable Map<String, Object> parameters,
-                                                      @Nullable T body) {
-        HttpEntity<T> requestEntity = new HttpEntity<>(body);
-
-        ResponseEntity<Object> serverResponse;
-
-        try {
-            if (parameters != null) {
-                serverResponse = rest.exchange(path, method, requestEntity, Object.class, parameters);
-            } else {
-                serverResponse = rest.exchange(path, method, requestEntity, Object.class);
-            }
-        } catch (Exception e) {
-            log.error("Ошибка запроса к сервису статистики", e);
-            return null;
-        }
-
-        return prepareResponse(serverResponse);
     }
 
     private static ResponseEntity<Object> prepareResponse(ResponseEntity<Object> response) {
@@ -63,5 +31,36 @@ public class BaseClient {
 
         log.error("Ошибка запроса к сервису статистики {}", responseBuilder.build());
         return null;
+    }
+
+    protected ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {
+        return makeAndSendRequest(HttpMethod.GET, path, parameters, null);
+    }
+
+    protected <T> ResponseEntity<Object> post(String path, T body) {
+        return makeAndSendRequest(HttpMethod.POST, path, null, body);
+
+    }
+
+    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method,
+                                                          String path,
+                                                          @Nullable Map<String, Object> parameters,
+                                                          @Nullable T body) {
+        HttpEntity<T> requestEntity = new HttpEntity<>(body);
+
+        ResponseEntity<Object> serverResponse;
+
+        try {
+            if (parameters != null) {
+                serverResponse = rest.exchange(path, method, requestEntity, Object.class, parameters);
+            } else {
+                serverResponse = rest.exchange(path, method, requestEntity, Object.class);
+            }
+        } catch (Exception e) {
+            log.error("Ошибка запроса к сервису статистики", e);
+            return null;
+        }
+
+        return prepareResponse(serverResponse);
     }
 }

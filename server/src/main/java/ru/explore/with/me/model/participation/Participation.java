@@ -11,6 +11,9 @@ import ru.explore.with.me.util.ParticipantStatus;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Entity класс для запросов на учатие в событии
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,20 +21,16 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "participants")
 public class Participation {
-//    @EmbeddedId
-//    private ParticipantId participantId;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
     @ManyToOne
-    //@MapsId("userId")
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
     @ManyToOne
-   // @MapsId("eventId")
     @JoinColumn(name = "event_id", referencedColumnName = "id")
     private Event event;
 

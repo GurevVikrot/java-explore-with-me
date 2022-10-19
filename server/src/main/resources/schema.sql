@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS users
 CREATE TABLE IF NOT EXISTS subscribers
 (
     user_id BIGINT NOT NULL,
-    sub_id BIGINT NOT NULL,
-    CONSTRAINT pk PRIMARY KEY (user_id, sub_id)
+    sub_id  BIGINT NOT NULL,
+    CONSTRAINT sub_pk PRIMARY KEY (user_id, sub_id)
 );
 
 CREATE TABLE IF NOT EXISTS categories

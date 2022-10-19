@@ -10,6 +10,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
+/**
+ * Dto объект для отправки статистики по эндпоинту
+ */
 @Getter
 @Setter
 @AllArgsConstructor

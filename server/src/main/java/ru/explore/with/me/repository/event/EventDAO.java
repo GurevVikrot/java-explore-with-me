@@ -9,30 +9,37 @@ import ru.explore.with.me.model.user.User;
 import ru.explore.with.me.util.EventSort;
 import ru.explore.with.me.util.EventStatus;
 
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
+/**
+ * Jdbc репозиторий событий
+ */
 @Component
 public class EventDAO {
     private final JdbcTemplate jdbcTemplate;
+
     @Autowired
     public EventDAO(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
-     * Метод для выборки событий для админского эндпоинта
-     * @param users
-     * @param states
-     * @param categories
-     * @param rangeStart
-     * @param rangeEnd
-     * @param from
-     * @param size
-     * @return
+     * Метод выборки событий с динамическим составлением запроса к БД для запроса событий от админа.
+     * Все параметры не обязательные, null или empty, за исключением from и size
+     *
+     * @param users      список id пользователей, чьи события нужно найти
+     * @param states     список состояний в которых находятся искомые события
+     * @param categories список id категорий в которых будет вестись поиск
+     * @param rangeStart дата и время не раньше которых должно произойти событие
+     * @param rangeEnd   дата и время не позже которых должно произойти событие
+     * @param from       количество событий, которые нужно пропустить для формирования текущего набора
+     * @param size       количество событий в наборе
+     * @return List Event
      */
     public List<Event> findAllToAdmin(
             List<Long> users,
@@ -55,13 +62,13 @@ public class EventDAO {
             argTypes.add(Types.BIGINT);
         }
 
-        if (states!= null && !states.isEmpty()) {
+        if (states != null && !states.isEmpty()) {
             sql.append("AND e.status = ANY (ARRAY[?]) ");
             args.add(states);
             argTypes.add(Types.VARCHAR);
         }
 
-        if (categories!= null && !categories.isEmpty()) {
+        if (categories != null && !categories.isEmpty()) {
             sql.append("AND e.category_id = ANY(ARRAY[?]) ");
             args.add(categories);
             argTypes.add(Types.INTEGER);
@@ -75,12 +82,12 @@ public class EventDAO {
                 args.add(rangeEnd);
                 argTypes.add(Types.TIMESTAMP);
             } else {
-                sql.append("AND e.event_date AFTER ? ");
+                sql.append("AND e.event_date > ? ");
                 args.add(rangeStart);
                 argTypes.add(Types.TIMESTAMP);
             }
         } else if (rangeEnd != null) {
-            sql.append("AND e.event_date BEFORE ? ");
+            sql.append("AND e.event_date < ? ");
             args.add(rangeEnd);
             argTypes.add(Types.TIMESTAMP);
         }
@@ -99,27 +106,29 @@ public class EventDAO {
     }
 
     /**
-     * Метод для выборки событий для публичного эндпоинта получения всех событий
-     * @param text
-     * @param categories
-     * @param paid
-     * @param rangeStart
-     * @param rangeEnd
-     * @param onlyAvailable
-     * @param sort
-     * @param from
-     * @param size
-     * @return
+     * Метод выборки событий с динамическим составлением запроса к БД для запроса событий с фильтрацией.
+     * Все параметры не обязательные, null или empty, за исключением sort, from и size
+     *
+     * @param text          текст для поиска в содержимом аннотации и подробном описании события
+     * @param categories    список идентификаторов категорий в которых будет вестись поиск
+     * @param paid          поиск только платных/бесплатных событий
+     * @param rangeStart    дата и время не раньше которых должно произойти событие
+     * @param rangeEnd      дата и время не позже которых должно произойти событие
+     * @param onlyAvailable только события у которых не исчерпан лимит запросов на участие
+     * @param sort          Вариант сортировки: по дате события или по количеству просмотров
+     * @param from          количество событий, которые нужно пропустить для формирования текущего набора
+     * @param size          количество событий в наборе
+     * @return List Event
      */
     public List<Event> findAllByFilter(String text,
-                                List<Integer> categories,
-                                boolean paid,
-                                LocalDateTime rangeStart,
-                                LocalDateTime rangeEnd,
-                                boolean onlyAvailable,
-                                EventSort sort,
-                                int from,
-                                int size) {
+                                       List<Integer> categories,
+                                       boolean paid,
+                                       LocalDateTime rangeStart,
+                                       LocalDateTime rangeEnd,
+                                       boolean onlyAvailable,
+                                       EventSort sort,
+                                       int from,
+                                       int size) {
         StringBuilder sql = getSqlBuilder();
         List<Object> args = new ArrayList<>();
         List<Integer> argTypes = new ArrayList<>();
@@ -157,17 +166,17 @@ public class EventDAO {
                 args.add(rangeEnd);
                 argTypes.add(Types.TIMESTAMP);
             } else {
-                sql.append("AND e.event_date AFTER ? ");
+                sql.append("AND e.event_date > ? ");
                 args.add(rangeStart);
                 argTypes.add(Types.TIMESTAMP);
             }
         } else if (rangeEnd != null) {
-            sql.append("AND e.event_date BEFORE ? ");
+            sql.append("AND e.event_date < ? ");
             args.add(rangeEnd);
             argTypes.add(Types.TIMESTAMP);
         } else { // если в запросе не указан диапазон дат [rangeStart-rangeEnd],
             // то нужно выгружать события, которые произойдут позже текущей даты и времени
-            sql.append("AND e.event_date AFTER ? ");
+            sql.append("AND e.event_date > ? ");
             args.add(LocalDateTime.now());
             argTypes.add(Types.TIMESTAMP);
         }
@@ -193,6 +202,11 @@ public class EventDAO {
                 (rs, rowNum) -> eventFromDb(rs));
     }
 
+    /**
+     * Составление начала sql запроса SELECT FROM. Выбирает все поля сущности Event за исключением participations
+     *
+     * @return StringBuilder
+     */
     private StringBuilder getSqlBuilder() {
         return new StringBuilder(
                 "SELECT " +
@@ -221,6 +235,14 @@ public class EventDAO {
                         "LEFT OUTER JOIN categories AS c on e.category_id = c.id " +
                         "LEFT OUTER JOIN users AS u ON e.creator = u.id ");
     }
+
+    /**
+     * Маппинг ResultSet в Event. Поле participations = null
+     *
+     * @param rs результат sql запроса
+     * @return Event
+     * @throws SQLException в случае неверной выборки
+     */
     private Event eventFromDb(ResultSet rs) throws SQLException {
 
         return new Event(

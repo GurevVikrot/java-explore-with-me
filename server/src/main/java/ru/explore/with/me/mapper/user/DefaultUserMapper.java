@@ -7,6 +7,13 @@ import ru.explore.with.me.model.user.User;
 
 @Component
 public class DefaultUserMapper implements UserMapper {
+    /**
+     * Преобразование UserDto в User.
+     * Заполнение поля created требуется в сервисе.
+     *
+     * @param userDto Dto объект
+     * @return User
+     */
     @Override
     public User toUser(UserDto userDto) {
         return new User(

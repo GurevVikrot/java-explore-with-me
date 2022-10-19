@@ -22,6 +22,9 @@ import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Контроллер запросов админа
+ */
 @RestController
 @RequestMapping("/admin")
 @Validated
@@ -43,6 +46,14 @@ public class AdminController {
         this.compilationService = compilationService;
     }
 
+    /**
+     * Получение подробной информации о пользователях с возможностью выборки конкретных id
+     *
+     * @param ids  список id запрашиваемых пользователей
+     * @param from количество событий, которые нужно пропустить для формирования текущего набора
+     * @param size количество событий в наборе
+     * @return List UserDt
+     */
     @GetMapping("/users")
     public List<UserDto> getUsers(
             @RequestParam(required = false) List<Long> ids,
@@ -52,6 +63,12 @@ public class AdminController {
         return userService.getUsers(ids, from, size);
     }
 
+    /**
+     * Добавление нового пользователя
+     *
+     * @param userDto Dto объект пользователя
+     * @return UserDto
+     */
     @PostMapping("/users")
     public UserDto createUser(
             @RequestBody @Valid UserDto userDto) {
@@ -59,6 +76,12 @@ public class AdminController {
         return userService.createUser(userDto);
     }
 
+    /**
+     * Удаление пользователя по id
+     *
+     * @param userId id пользователя
+     * @return String
+     */
     @DeleteMapping("/users/{userId}")
     public String deleteUser(
             @PathVariable @Positive long userId) {
@@ -67,15 +90,17 @@ public class AdminController {
     }
 
     /**
+     * Получение подробного списка событий для админа.
      * Эндпоинт возвращает полную информацию обо всех событиях подходящих под переданные условия.
      * Все параметры не обязательные.
-     * @param users список id пользователей, чьи события нужно найти
-     * @param states список состояний в которых находятся искомые события
+     *
+     * @param users      список id пользователей, чьи события нужно найти
+     * @param states     список состояний в которых находятся искомые события
      * @param categories список id категорий в которых будет вестись поиск
      * @param rangeStart дата и время не раньше которых должно произойти событие
-     * @param rangeEnd дата и время не позже которых должно произойти событие
-     * @param from количество событий, которые нужно пропустить для формирования текущего набора. default = 0
-     * @param size количество событий в наборе. default = 10
+     * @param rangeEnd   дата и время не позже которых должно произойти событие
+     * @param from       количество событий, которые нужно пропустить для формирования текущего набора. default = 0
+     * @param size       количество событий в наборе. default = 10
      * @return List<EventFullDto>
      */
     @GetMapping("/events")
@@ -98,6 +123,13 @@ public class AdminController {
         return eventService.getEventsToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
+    /**
+     * Редактирование события админом. Валидация не предусмотрена по ТЗ
+     *
+     * @param eventId  id события
+     * @param eventDto Dto объект события для обновления
+     * @return EventFullDto
+     */
     @PutMapping("/events/{eventId}")
     public EventFullDto editEventByAdmin(@PathVariable @Positive long eventId,
                                          @RequestBody RequestEventDto eventDto) {
@@ -105,48 +137,97 @@ public class AdminController {
         return eventService.editEventByAdmin(eventDto, eventId);
     }
 
+    /**
+     * Публикация события админом
+     *
+     * @param eventId id события
+     * @return EventFullDto
+     */
     @PatchMapping("/events/{eventId}/publish")
-    public EventFullDto publishEvent (@PathVariable @Positive long eventId) {
+    public EventFullDto publishEvent(@PathVariable @Positive long eventId) {
         log.info("Публикация события id = {}", eventId);
         return eventService.publishEvent(eventId);
     }
 
+    /**
+     * Отказ в публикации события админом
+     *
+     * @param eventId id события
+     * @return EventFullDto
+     */
     @PatchMapping("/events/{eventId}/reject")
-    public EventFullDto rejectEvent (@PathVariable @Positive long eventId) {
+    public EventFullDto rejectEvent(@PathVariable @Positive long eventId) {
         log.info("Публикация события id = {}", eventId);
         return eventService.rejectEvent(eventId);
     }
 
+    /**
+     * Создание категории админом
+     *
+     * @param categoryDto Dto объект публикации
+     * @return CategoryDto
+     */
     @PostMapping("/categories")
     public CategoryDto createCategory(@RequestBody @Valid CategoryDto categoryDto) {
         log.info("Запрос на создание категории: {}", categoryDto.toString());
         return categoryService.createCategory(categoryDto);
     }
 
+    /**
+     * Обновление категории админом
+     *
+     * @param categoryDto Dto объект публикации
+     * @return CategoryDto
+     */
     @PatchMapping("/categories")
     public CategoryDto updateCategory(@RequestBody @Valid CategoryDto categoryDto) {
         log.info("Запрос на обновление категории: {}", categoryDto.toString());
         return categoryService.updateCategory(categoryDto);
     }
 
+    /**
+     * Удаление категории админом
+     *
+     * @param catId id категории
+     * @return String
+     */
     @DeleteMapping("/categories/{catId}")
     public String deleteCategory(@PathVariable @Positive int catId) {
         log.info("Запрос на удаление категории: {}", catId);
         return categoryService.deleteCategory(catId);
     }
 
+    /**
+     * Создание подборки событий
+     *
+     * @param compilationDto Dto объект подборки
+     * @return CompilationDto
+     */
     @PostMapping("/compilations")
     public CompilationDto createCompilation(@RequestBody @Valid NewCompilationDto compilationDto) {
         log.info("Запрос на создание подборки: {}", compilationDto);
         return compilationService.createCompilation(compilationDto);
     }
 
+    /**
+     * Удаление подборки админом
+     *
+     * @param compId id подборки
+     * @return String
+     */
     @DeleteMapping("/compilations/{compId}")
     public String deleteCompilation(@PathVariable @Positive long compId) {
         log.info("Запрос на удаление подборки id = {}", compId);
         return compilationService.deleteCompilation(compId);
     }
 
+    /**
+     * Добавление события в подборку
+     *
+     * @param compId  id события
+     * @param eventId id подборки
+     * @return String
+     */
     @PatchMapping("/compilations/{compId}/events/{eventId}")
     public String addEventToCompilation(@PathVariable @Positive long compId,
                                         @PathVariable @Positive long eventId) {
@@ -154,6 +235,13 @@ public class AdminController {
         return compilationService.addEventToCompilation(compId, eventId);
     }
 
+    /**
+     * Удаление события из подборки
+     *
+     * @param compId  id события
+     * @param eventId id подборки
+     * @return String
+     */
     @DeleteMapping("/compilations/{compId}/events/{eventId}")
     public String removeEventFromCompilation(@PathVariable @Positive long compId,
                                              @PathVariable @Positive long eventId) {
@@ -161,12 +249,24 @@ public class AdminController {
         return compilationService.removeEventFromCompilation(compId, eventId);
     }
 
+    /**
+     * Закрепление подборки на главной странице
+     *
+     * @param compId id подборки
+     * @return String
+     */
     @PatchMapping("/compilations/{compId}/pin")
     public String pinCompilation(@PathVariable @Positive long compId) {
         log.info("Запрос на закрепление подборки: {}", compId);
         return compilationService.pinCompilation(compId, true);
     }
 
+    /**
+     * Открепление подборки с главной страницы
+     *
+     * @param compId id подборки
+     * @return String
+     */
     @DeleteMapping("/compilations/{compId}/pin")
     public String unpinCompilation(@PathVariable @Positive long compId) {
         log.info("Запрос на открепление подборки: {}", compId);

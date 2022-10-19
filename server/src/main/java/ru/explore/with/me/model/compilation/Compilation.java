@@ -9,6 +9,9 @@ import ru.explore.with.me.model.event.Event;
 import javax.persistence.*;
 import java.util.List;
 
+/**
+ * Entity класс для подборок событий
+ */
 @Getter
 @Setter
 @AllArgsConstructor

@@ -29,6 +29,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация сервиса событий работающая с БД
+ */
 @Service
 @Slf4j
 public class DbEventService implements EventService {
@@ -61,6 +64,14 @@ public class DbEventService implements EventService {
         this.eventClient = eventClient;
     }
 
+    /**
+     * Получение списка событий пользователя. В случае если пользователь не найден выбрасывается исключение.
+     *
+     * @param userId id пользователя
+     * @param from   количество элементов, которые нужно пропустить для формирования текущего набора
+     * @param size   количество элементов в наборе
+     * @return List EventShortDto
+     */
     @Override
     public List<EventShortDto> getUserEvents(long userId, int from, int size) {
         checkUserExist(userId);
@@ -74,7 +85,8 @@ public class DbEventService implements EventService {
     }
 
     /**
-     * TODO доделать
+     * Получение списка событий с фильтрацией. Параметры могут быть null или empty
+     * Заполнение списка заявок на участие происходит для каждого события индивидуально
      *
      * @param users      список id пользователей, чьи события нужно найти
      * @param states     список состояний в которых находятся искомые события
@@ -103,6 +115,7 @@ public class DbEventService implements EventService {
 
     /**
      * Получение события по eго идентификатору. В Случае отсутствия события выбрасывается исключение.
+     * Метод отправляет статистику в сервис статистики
      *
      * @param id      Id События
      * @param request Данные запроса для отправки в сервис статистики. В случае null статистика не отравляется
@@ -137,19 +150,16 @@ public class DbEventService implements EventService {
                 () -> new NotFoundException("Пользователь не найден")));
         event.setCategory(categoryRepository.findById(requestEventDto.getCategory()).orElseThrow(
                 () -> new NotFoundException("Категория не найдена")));
-//        if (requestEventDto.getParticipantLimit() == 0 || requestEventDto.getRequestModeration() == null) {
-//            event.setRequestModeration(false);
-//        }
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
     /**
-     * TODO доделать
+     * Обновление события пользователем. Пользователь должен быть создателем события
      *
-     * @param userId
-     * @param requestEventDto
-     * @return
+     * @param userId          id пользователя
+     * @param requestEventDto Dto объект события для обновления
+     * @return EventFullDto
      */
     @Override
     public EventFullDto updateEvent(long userId, RequestEventDto requestEventDto) {
@@ -159,6 +169,13 @@ public class DbEventService implements EventService {
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
+    /**
+     * Получение подробной информации о событии пользователя. Пользователь должен быть создателем события
+     *
+     * @param userId  id пользователя
+     * @param eventId id события
+     * @return EventFullDto or NotFoundException or ValidationException
+     */
     @Override
     public EventFullDto getEventByCreator(long userId, long eventId) {
         checkUserExist(userId);
@@ -172,6 +189,13 @@ public class DbEventService implements EventService {
         return event;
     }
 
+    /**
+     * Отмена события пользователем. Невозможно отменить событие, которое уже опубликовано
+     *
+     * @param userId  id пользователя
+     * @param eventId id события
+     * @return EventFullDto or NotFoundException or ValidationException
+     */
     @Override
     public EventFullDto cancelEventByCreator(long userId, long eventId) {
         checkUserExist(userId);
@@ -188,11 +212,8 @@ public class DbEventService implements EventService {
     }
 
     /**
-     * Метод получения событий с возможностью фильтрации.
-     * Стандартные условия фильтрации:
-     * 1. Событие должно быть опубликовано
-     * 2. Если не указан диапазон,  [rangeStart-rangeEnd], то нужно выгружать события,
-     * которые произойдут позже текущей даты и времени
+     * Поиск событий по фильтрам. Все фильтры могут быть default, null, empty
+     * Возвращается краткая информация о событиях
      *
      * @param text          текст для поиска в содержимом аннотации и подробном описании события
      * @param categories    список идентификаторов категорий в которых будет вестись поиск
@@ -253,6 +274,13 @@ public class DbEventService implements EventService {
         return events;
     }
 
+    /**
+     * Изменение события без валидации
+     *
+     * @param eventDto Dto объект события для обновления
+     * @param eventId  id события
+     * @return EventFullDto
+     */
     @Override
     public EventFullDto editEventByAdmin(RequestEventDto eventDto, long eventId) {
         if (eventDto == null) {
@@ -262,6 +290,12 @@ public class DbEventService implements EventService {
         return eventMapper.toEventFullDto(eventRepository.save(updateEventFromDto(eventDto, eventId, false)));
     }
 
+    /**
+     * Публикация события
+     *
+     * @param eventId id события
+     * @return EventFullDto
+     */
     @Override
     public EventFullDto publishEvent(long eventId) {
         Event event = eventRepository.findById(eventId).orElseThrow(
@@ -277,6 +311,12 @@ public class DbEventService implements EventService {
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
+    /**
+     * Отказ в публикации события
+     *
+     * @param eventId id события
+     * @return EventFullDto
+     */
     @Override
     public EventFullDto rejectEvent(long eventId) {
         Event event = eventRepository.findById(eventId).orElseThrow(
@@ -290,13 +330,20 @@ public class DbEventService implements EventService {
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
 
+    /**
+     * Получение списка событий автора для подпищика
+     *
+     * @param subId  id пользователя
+     * @param userId id автора
+     * @return List EventShortDto
+     */
     @Override
     public List<EventShortDto> getUserEventsToSub(long subId, long userId) {
         if (!subscribeRepository.existsById(new SubscribeId(userId, subId))) {
             throw new NotFoundException("Вы не являетесь подпищиком пользователя");
         }
 
-        return eventRepository.findAllByCreatorAndStatus(userId, EventStatus.PUBLISHED.toString()).stream()
+        return eventRepository.findAllToSub(userId, EventStatus.PUBLISHED.toString()).stream()
                 .map(eventMapper::toShortEventDto)
                 .collect(Collectors.toList());
     }
@@ -363,7 +410,7 @@ public class DbEventService implements EventService {
                     participationRepository.changeParticipantsStatusOfEvent(
                             event.getId(), ParticipantStatus.PENDING.toString());
                 } catch (Exception e) {
-                    log.info("Во время попытки изменить сататусы запросов на участие в событии что-то пошло не так" +
+                    log.info("Во время попытки изменить статусы запросов на участие в событии что-то пошло не так" +
                             e.getMessage());
                 }
 
@@ -378,7 +425,7 @@ public class DbEventService implements EventService {
                 participationRepository.changeParticipantsStatusOfEvent(
                         event.getId(), ParticipantStatus.PENDING.toString());
             } catch (Exception e) {
-                log.info("Во время попытки изменить сататусы запросов на участие в событии что-то пошло не так" +
+                log.info("Во время попытки изменить статусы запросов на участие в событии что-то пошло не так" +
                         e.getMessage());
             }
         }
@@ -391,6 +438,12 @@ public class DbEventService implements EventService {
         return event;
     }
 
+    /**
+     * Проверка даты события на соответствие относительно текущего момента
+     *
+     * @param eventDate Дата события
+     * @param hours     Часы, на сколько дата начала события должна быть позже относительно текущего момента
+     */
     private void checkEventDate(LocalDateTime eventDate, int hours) {
         if (LocalDateTime.now().plusHours(hours).isAfter(eventDate)) {
             throw new ValidationException("Время начала события должно быть позже " + hours +
@@ -398,6 +451,11 @@ public class DbEventService implements EventService {
         }
     }
 
+    /**
+     * Проверка существования пользователя в БД
+     *
+     * @param userId id пользователя
+     */
     private void checkUserExist(long userId) {
         if (!userRepository.existsById(userId)) {
             throw new ValidationException("Пользователя не существует");
