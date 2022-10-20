@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Dto объект для возврата статистики по конкретному uri
+ */
 @Getter
 @Setter
 @AllArgsConstructor

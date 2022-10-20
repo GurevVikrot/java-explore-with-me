@@ -17,6 +17,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+/**
+ * Реализация клиента RestTemplate для отправки и получения статистики по эндоинтам событий.
+ * Обращается к сервису статистики.
+ */
 @Component
 public class EventClient extends BaseClient {
 
@@ -34,31 +38,28 @@ public class EventClient extends BaseClient {
         this.mapper = mapper;
     }
 
+    /**
+     * Отправка статистики обращения к эндоинту в сервис статистики
+     *
+     * @param request Данные запроса пришедшие в эндпоинт основного сервиса
+     */
     public void sendStatistic(HttpServletRequest request) {
         post("/hit", mapper.toEndpointHitDto(request));
     }
 
     /**
-     * Получение статисти
+     * Получение статистики просмотров для конкретного события
+     * Запрашивает статистику за промежуток времени.
      *
-     * @param eventId
-     * @param start
-     * @return
+     * @param eventId id события
+     * @param start   Дата и время начала отчета промежутка
+     * @return EventViewStats
      */
     public EventViewStats getEventStatistic(Long eventId, LocalDateTime start, LocalDateTime end) {
         String startCoded = URLEncoder.encode(
                 start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), StandardCharsets.UTF_8);
         String endCoded = URLEncoder.encode
                 (end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), StandardCharsets.UTF_8);
-//        String urlTemplate = UriComponentsBuilder.fromHttpUrl(url)
-//                .queryParam("msisdn", "{msisdn}")
-//                .queryParam("email", "{email}")
-//                .queryParam("clientVersion", "{clientVersion}")
-//                .queryParam("clientType", "{clientType}")
-//                .queryParam("issuerName", "{issuerName}")
-//                .queryParam("applicationName", "{applicationName}")
-//                .encode()
-//                .toUriString();
 
         Map<String, Object> parameters = Map.of(
                 "start", startCoded,

@@ -8,6 +8,9 @@ import lombok.Setter;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * Сущность для записи статистики
+ */
 @Getter
 @Setter
 @AllArgsConstructor

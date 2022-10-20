@@ -9,28 +9,15 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
+/**
+ * Базовый клиент RestTemplate
+ */
 @Slf4j
 public class BaseClient {
     protected final RestTemplate rest;
 
     public BaseClient(RestTemplate rest) {
         this.rest = rest;
-    }
-
-    private static ResponseEntity<Object> prepareResponse(ResponseEntity<Object> response) {
-        if (response.getStatusCode().is2xxSuccessful()) {
-            log.info("Запрос к сервису статистики успешен");
-            return response;
-        }
-
-        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());
-
-        if (response.hasBody()) {
-            return responseBuilder.body(response.getBody());
-        }
-
-        log.error("Ошибка запроса к сервису статистики {}", responseBuilder.build());
-        return null;
     }
 
     protected ResponseEntity<Object> get(String path, @Nullable Map<String, Object> parameters) {
@@ -42,6 +29,15 @@ public class BaseClient {
 
     }
 
+    /**
+     * Метод создания запроса к стороннему сервису.
+     *
+     * @param method     метод Http запроса
+     * @param path       uri по которому нужно обращаться
+     * @param parameters Параметры запроса. Может быть null
+     * @param body       Тело запроса. Может быть null
+     * @return ResponseEntity Object
+     */
     private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method,
                                                           String path,
                                                           @Nullable Map<String, Object> parameters,
@@ -62,5 +58,29 @@ public class BaseClient {
         }
 
         return prepareResponse(serverResponse);
+    }
+
+    /**
+     * Метод анализа ответа на запрос к стороннему сервису.
+     * В случае неудачного запроса логирует его и возвращает null.
+     * При обращении к сервису статистики неудачный ответ может возникать, если не найдено совпадения по обращению
+     *
+     * @param response Ответ от сервиса
+     * @return ResponseEntity Object
+     */
+    private ResponseEntity<Object> prepareResponse(ResponseEntity<Object> response) {
+        if (response.getStatusCode().is2xxSuccessful()) {
+            log.info("Запрос к сервису статистики успешен");
+            return response;
+        }
+
+        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());
+
+        if (response.hasBody()) {
+            return responseBuilder.body(response.getBody());
+        }
+
+        log.error("Ошибка запроса к сервису статистики {}", responseBuilder.build());
+        return null;
     }
 }

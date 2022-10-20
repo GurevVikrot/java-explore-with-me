@@ -1,13 +1,10 @@
 package ru.explore.with.me.statistic.service;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.explore.with.me.statistic.dto.EndpointHitDto;
 import ru.explore.with.me.statistic.dto.ViewStatsDto;
-import ru.explore.with.me.statistic.exception.StatisticError;
-import ru.explore.with.me.statistic.mapper.EndpointHitMapper;
+import ru.explore.with.me.statistic.mapper.StatisticMapper;
 import ru.explore.with.me.statistic.model.EndpointHit;
 import ru.explore.with.me.statistic.repository.StatisticDao;
 import ru.explore.with.me.statistic.repository.StatisticRepository;
@@ -20,14 +17,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Реализация сервиса статистики для работы с БД
+ */
 @Service
-public class DbStatisticService implements StatisticService{
+public class DbStatisticService implements StatisticService {
     private final StatisticRepository repository;
-    private final EndpointHitMapper mapper;
+    private final StatisticMapper mapper;
     private final StatisticDao statisticDao;
 
     @Autowired
-    public DbStatisticService(StatisticRepository repository, EndpointHitMapper mapper, StatisticDao statisticDao) {
+    public DbStatisticService(StatisticRepository repository, StatisticMapper mapper, StatisticDao statisticDao) {
         this.repository = repository;
         this.mapper = mapper;
         this.statisticDao = statisticDao;
@@ -47,7 +47,7 @@ public class DbStatisticService implements StatisticService{
         LocalDateTime end = LocalDateTime.parse(
                 URLDecoder.decode(endCoded, StandardCharsets.UTF_8), CustomTimeFormatter.getFormatter());
 
-        return statisticDao.getHits(start,end,uris,unique).stream()
+        return statisticDao.getHits(start, end, uris, unique).stream()
                 .map(mapper::toViewDto)
                 .collect(Collectors.toList());
     }

@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Объект статистики получаемый от сервиса статистики
+ */
 @Getter
 @Setter
 @AllArgsConstructor

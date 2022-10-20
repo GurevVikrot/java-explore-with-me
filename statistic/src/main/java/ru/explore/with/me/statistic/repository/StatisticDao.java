@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Dto класс для работы с БД и получения статистики обращений к uri
+ */
 @Component
 @Slf4j
 public class StatisticDao {
@@ -22,6 +25,16 @@ public class StatisticDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Получение количества обращений к uri за промежуток времени.
+     * uris быть null или default.
+     *
+     * @param start  Дата и время начала промежутка.
+     * @param end    Дата и время окончания промежутка.
+     * @param uris   Cписок uri. Может быть null
+     * @param unique уникальные или нет ip обращений записанных в статистике
+     * @return List ViewStats
+     */
     public List<ViewStats> getHits(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         List<ViewStats> stats = new ArrayList<>();
 
@@ -48,6 +61,14 @@ public class StatisticDao {
         return stats;
     }
 
+    /**
+     * Получение всей статистики за промежуток времени
+     *
+     * @param start  Дата и время начала промежутка.
+     * @param end    Дата и время окончания промежутка.
+     * @param unique уникальные или нет ip обращений записанных в статистике
+     * @return List ViewStats
+     */
     private List<ViewStats> getHits(LocalDateTime start, LocalDateTime end, boolean unique) {
         return jdbcTemplate.query(sqlHitBuilder(start, end, null, unique),
                 (rs, rowNum) -> new ViewStats(
@@ -57,7 +78,17 @@ public class StatisticDao {
                 start, end);
     }
 
-    public String sqlHitBuilder(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+    /**
+     * Метод получения строки sql запроса к БД с динамическим образованием запроса
+     * в зависимости от передаваемых параметров
+     *
+     * @param start  Дата и время начала промежутка. Может быть null
+     * @param end    Дата и время окончания промежутка. Может быть null
+     * @param uris   Список uri. Может быть null
+     * @param unique уникальные или нет ip обращений записанных в статистике
+     * @return String
+     */
+    private String sqlHitBuilder(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         StringBuilder sql = new StringBuilder("SELECT app, uri, ");
         boolean urisCheck = false;
 

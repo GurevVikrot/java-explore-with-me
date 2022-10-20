@@ -12,9 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Маппер запросов и ответов от сервиса статистики
+ */
 @Component
 @Slf4j
 public class EventHitMapper {
+    /**
+     * Преобразование данных обращения к основному эндпоинту в EndpointHitDto.
+     *
+     * @param request данные обращения к основному эндпоинту
+     * @return EndpointHitDto
+     */
     public EndpointHitDto toEndpointHitDto(HttpServletRequest request) {
         return new EndpointHitDto(
                 0,
@@ -24,6 +33,14 @@ public class EventHitMapper {
                 LocalDateTime.now());
     }
 
+    /**
+     * Преобразование ответа сервиса статистики в объект EventViewStats.
+     * В случае ошибки преобразования отлавливается исключение и логируется,
+     * для исключения падения основного сервиса и выдачи ошибки основному клиенту.
+     *
+     * @param response ResponseEntity ответа сервиса статистики
+     * @return EventViewStats
+     */
     public EventViewStats toEventViewStats(ResponseEntity<Object> response) {
         if (response != null && response.hasBody()) {
             try {

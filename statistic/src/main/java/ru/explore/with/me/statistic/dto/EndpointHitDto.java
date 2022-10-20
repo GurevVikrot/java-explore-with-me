@@ -3,12 +3,15 @@ package ru.explore.with.me.statistic.dto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
-import ru.explore.with.me.statistic.util.CustomTimeFormatter;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PastOrPresent;
 import java.time.LocalDateTime;
+
+/**
+ * Dto объект для записи статистики обращения к сервису
+ */
 @Getter
 @Setter
 @AllArgsConstructor
