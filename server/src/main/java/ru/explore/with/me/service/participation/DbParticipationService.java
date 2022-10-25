@@ -121,7 +121,7 @@ public class DbParticipationService implements ParticipationService {
      * Если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти
      * в состояние подтвержденного
      *
-     * @param userId id пользователя
+     * @param userId  id пользователя
      * @param eventId id события
      * @return ParticipationRequestDto
      */

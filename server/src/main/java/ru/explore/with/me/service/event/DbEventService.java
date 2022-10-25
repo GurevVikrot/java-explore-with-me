@@ -152,6 +152,7 @@ public class DbEventService implements EventService {
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
+
     /**
      * Обновление события пользователем. Пользователь должен быть создателем события
      *

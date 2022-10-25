@@ -1,6 +1,8 @@
 package ru.explore.with.me.dto.compilation;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.explore.with.me.dto.event.EventShortDto;
 
 import javax.validation.constraints.NotNull;

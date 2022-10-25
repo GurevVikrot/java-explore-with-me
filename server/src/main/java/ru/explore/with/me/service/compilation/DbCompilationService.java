@@ -173,7 +173,7 @@ public class DbCompilationService implements CompilationService {
     @Override
     public CompilationDto getCompilation(long compId) {
         return compilationMapper.toCompilationDto(
-               getCompilationFromDb(compId));
+                getCompilationFromDb(compId));
     }
 
     private Compilation getCompilationFromDb(long compId) {
