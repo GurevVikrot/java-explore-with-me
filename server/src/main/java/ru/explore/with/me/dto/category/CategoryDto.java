@@ -9,12 +9,10 @@ import javax.validation.constraints.NotNull;
 /**
  * Dto класс категории. Заложена валидация.
  */
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@ToString
 @NotNull
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CategoryDto {
     private int id;
     @NotBlank

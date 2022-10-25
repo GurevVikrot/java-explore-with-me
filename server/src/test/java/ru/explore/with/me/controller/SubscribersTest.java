@@ -144,13 +144,13 @@ class SubscribersTest {
     @Test
     public void getEventsToSubscriber() {
         userService.subOnUser(2L, 1L);
-        List<EventShortDto> events = eventService.getUserEventsToSub(2L, 1L);
+        List<EventShortDto> events = eventService.getUserEventsToSub(2L, 1L, true);
         assertNotNull(events);
         assertTrue(events.isEmpty());
 
         Event event = eventRepository.findById(1L).orElseThrow();
         eventService.publishEvent(1L);
-        events = eventService.getUserEventsToSub(2L, 1L);
+        events = eventService.getUserEventsToSub(2L, 1L, true);
         assertNotNull(events);
         assertFalse(events.isEmpty());
         assertEquals(1L, events.get(0).getId());
@@ -159,12 +159,12 @@ class SubscribersTest {
         assertEquals(event.getEventDate(), events.get(0).getEventDate());
 
         userService.subOnUser(1L, 2L);
-        List<EventShortDto> events2 = eventService.getUserEventsToSub(1L, 2L);
+        List<EventShortDto> events2 = eventService.getUserEventsToSub(1L, 2L, true);
         assertNotNull(events2);
         assertTrue(events2.isEmpty());
 
-        assertThrows(NotFoundException.class, () -> eventService.getUserEventsToSub(99L, 2L));
-        assertThrows(NotFoundException.class, () -> eventService.getUserEventsToSub(1L, 99L));
-        assertThrows(NotFoundException.class, () -> eventService.getUserEventsToSub(99L, 99L));
+        assertThrows(NotFoundException.class, () -> eventService.getUserEventsToSub(99L, 2L, true));
+        assertThrows(NotFoundException.class, () -> eventService.getUserEventsToSub(1L, 99L, true));
+        assertThrows(NotFoundException.class, () -> eventService.getUserEventsToSub(99L, 99L, false));
     }
 }

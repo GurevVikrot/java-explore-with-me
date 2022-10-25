@@ -82,11 +82,9 @@ public class DbUserService implements UserService {
             throw new ValidationException("Пользователь не может быть подписан сам на себя");
         }
 
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException("Пользователь не найден, не возможно подписаться"));
+        User user = getUserFromDb(userId);
 
-        User sub = userRepository.findById(subId).orElseThrow(
-                () -> new NotFoundException("Подписчик не найден, не возможно подписаться"));
+        User sub = getUserFromDb(subId);
 
         Subscribe subscribe = new Subscribe(
                 new SubscribeId(userId, subId), user, sub);
@@ -104,9 +102,7 @@ public class DbUserService implements UserService {
 
     @Override
     public List<UserShortDto> getSubscribes(long subId) {
-        if (!userRepository.existsById(subId)) {
-            throw new NotFoundException("Пользователь не найден");
-        }
+        userExist(subId);
         return userRepository.findUsersBySubId(subId).stream()
                 .map(userMapper::toUserShortDto)
                 .collect(Collectors.toList());
@@ -114,11 +110,20 @@ public class DbUserService implements UserService {
 
     @Override
     public List<UserShortDto> getUserSubscribers(long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException("Пользователь не найден");
-        }
+        userExist(userId);
         return userRepository.findSubscribers(userId).stream()
                 .map(userMapper::toUserShortDto)
                 .collect(Collectors.toList());
+    }
+
+    private User getUserFromDb(long userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException("Пользователь не найден"));
+    }
+
+    private void userExist(long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("Пользователь не найден");
+        }
     }
 }

@@ -12,11 +12,9 @@ import java.time.LocalDateTime;
 /**
  * Dto класс пользователя. Используется для создания нового пользователя и ответа
  */
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
-@ToString
+@AllArgsConstructor
 @NotNull
 public class UserDto {
     private long id;

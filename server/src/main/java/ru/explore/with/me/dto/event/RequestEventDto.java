@@ -12,11 +12,9 @@ import java.time.LocalDateTime;
  * Dto класс события с валидацией полей. Используется при создании новых событий и обновлении.
  * В Случае обновления необходимо отдельно валидировать поле eventId
  */
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
-@ToString
+@AllArgsConstructor
 @NotNull
 public class RequestEventDto {
     private long eventId;

@@ -75,10 +75,8 @@ public class DbCompilationService implements CompilationService {
      */
     @Override
     public String addEventToCompilation(long compId, long eventId) {
-        Compilation compilation = compilationRepository.findById(compId).orElseThrow(
-                () -> new NotFoundException("Подборка не найдена"));
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("Событие не найдено"));
+        Compilation compilation = getCompilationFromDb(compId);
+        Event event = getEventFromDb(eventId);
 
         List<Event> events = compilation.getEvents();
         if (events.contains(event)) {
@@ -99,11 +97,10 @@ public class DbCompilationService implements CompilationService {
      */
     @Override
     public String removeEventFromCompilation(long compId, long eventId) {
-        Compilation compilation = compilationRepository.findById(compId).orElseThrow(
-                () -> new NotFoundException("Подборка не найдена"));
+        Compilation compilation = getCompilationFromDb(compId);
 
         compilation.getEvents().stream()
-                .filter((event) -> event.getId() != eventId)
+                .filter(event -> event.getId() != eventId)
                 .collect(Collectors.toList());
 
         compilationRepository.save(compilation);
@@ -120,8 +117,7 @@ public class DbCompilationService implements CompilationService {
      */
     @Override
     public String pinCompilation(long compId, boolean pin) {
-        Compilation compilation = compilationRepository.findById(compId).orElseThrow(
-                () -> new NotFoundException("Подборка не найдена"));
+        Compilation compilation = getCompilationFromDb(compId);
 
         if (pin) {
             if (compilation.isPinned()) {
@@ -177,7 +173,16 @@ public class DbCompilationService implements CompilationService {
     @Override
     public CompilationDto getCompilation(long compId) {
         return compilationMapper.toCompilationDto(
-                compilationRepository.findById(compId).orElseThrow(
-                        () -> new NotFoundException("Подборка не найдена")));
+               getCompilationFromDb(compId));
+    }
+
+    private Compilation getCompilationFromDb(long compId) {
+        return compilationRepository.findById(compId).orElseThrow(
+                () -> new NotFoundException("Подборка не найдена"));
+    }
+
+    private Event getEventFromDb(long eventId) {
+        return eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("События не существует"));
     }
 }

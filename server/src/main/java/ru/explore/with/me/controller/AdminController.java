@@ -113,13 +113,13 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "0") @PositiveOrZero int from,
             @RequestParam(required = false, defaultValue = "10") @Positive int size) {
         log.info("Запрос на получение событий параметры:\n" +
-                "users {} \n" +
-                "states {} \n" +
-                "categories {}\n" +
-                "rangeStart {}\n" +
-                "rangeEnd {}\n" +
-                "from {}\n" +
-                "size{} \n", users, states, categories, rangeStart, rangeEnd, from, size);
+                "users: " + users + "\n" +
+                "states: " + states + "\n" +
+                "categories: " + categories + "\n" +
+                "rangeStart: " + rangeStart + "\n" +
+                "rangeEnd: " + rangeEnd + "\n" +
+                "from: " + from + "\n" +
+                "size: " + size + "\n");
         return eventService.getEventsToAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 

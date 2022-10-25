@@ -1,10 +1,7 @@
 package ru.explore.with.me.dto.participation;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.explore.with.me.util.ParticipantStatus;
 
@@ -14,10 +11,9 @@ import java.time.LocalDateTime;
 /**
  * Dto класс участия в событии. Используется для ответа
  */
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 @NotNull
 public class ParticipationRequestDto {
     private long id;

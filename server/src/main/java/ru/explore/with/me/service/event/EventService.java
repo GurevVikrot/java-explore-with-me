@@ -145,5 +145,5 @@ public interface EventService {
      * @param userId id автора
      * @return List EventShortDto
      */
-    List<EventShortDto> getUserEventsToSub(long subId, long userId);
+    List<EventShortDto> getUserEventsToSub(long subId, long userId, boolean actual);
 }

@@ -12,7 +12,9 @@ import ru.explore.with.me.dto.event.RequestEventDto;
 import ru.explore.with.me.exeption.NotFoundException;
 import ru.explore.with.me.exeption.ValidationException;
 import ru.explore.with.me.mapper.event.EventMapper;
+import ru.explore.with.me.model.category.Category;
 import ru.explore.with.me.model.event.Event;
+import ru.explore.with.me.model.user.User;
 import ru.explore.with.me.model.user.subscribe.SubscribeId;
 import ru.explore.with.me.repository.category.CategoryRepository;
 import ru.explore.with.me.repository.event.EventRepository;
@@ -35,6 +37,10 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class DbEventService implements EventService {
+    // Количество часов, на количество которых дата начала события должна быть позже
+    // относительно момента создания/обновления
+    private static final int TIME_BEFORE_CREATE = 2;
+    private static final int TIME_BEFORE_PUBLISH = 1;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
@@ -42,10 +48,6 @@ public class DbEventService implements EventService {
     private final SubscribeRepository subscribeRepository;
     private final EventMapper eventMapper;
     private final EventClient eventClient;
-    // Количество часов, на количество которых дата начала события должна быть позже
-    // относительно момента создания/обновления
-    private final int TIME_BEFORE_CREATE = 2;
-    private final int TIME_BEFORE_PUBLISH = 1;
 
     @Autowired
     public DbEventService(EventRepository eventRepository,
@@ -127,8 +129,7 @@ public class DbEventService implements EventService {
             eventClient.sendStatistic(request);
         }
 
-        return eventMapper.toEventFullDto(eventRepository.findById(id).orElseThrow(
-                () -> new NotFoundException("Событие не найдено")));
+        return eventMapper.toEventFullDto(getEventFromDb(id));
     }
 
     /**
@@ -146,14 +147,11 @@ public class DbEventService implements EventService {
 
         Event event = eventMapper.toNewEvent(requestEventDto);
 
-        event.setCreator(userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException("Пользователь не найден")));
-        event.setCategory(categoryRepository.findById(requestEventDto.getCategory()).orElseThrow(
-                () -> new NotFoundException("Категория не найдена")));
+        event.setCreator(getUserFromDb(userId));
+        event.setCategory(getCategoryFromDb(requestEventDto.getCategory()));
 
         return eventMapper.toEventFullDto(eventRepository.save(event));
     }
-
     /**
      * Обновление события пользователем. Пользователь должен быть создателем события
      *
@@ -200,8 +198,7 @@ public class DbEventService implements EventService {
     public EventFullDto cancelEventByCreator(long userId, long eventId) {
         checkUserExist(userId);
 
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("События не существует"));
+        Event event = getEventFromDb(eventId);
 
         if (!event.getStatus().equals(EventStatus.PUBLISHED)) {
             event.setStatus(EventStatus.CANCELED);
@@ -238,11 +235,9 @@ public class DbEventService implements EventService {
                                                int from,
                                                int size,
                                                HttpServletRequest request) {
-        if (rangeEnd != null && rangeStart != null) {
-            if (rangeEnd.isBefore(rangeStart)) {
-                throw new ValidationException("Некорректный промежуток времени." +
-                        " Дата окончания промежутка раньше, чем начало промежутка.");
-            }
+        if (rangeEnd != null && rangeStart != null && rangeEnd.isBefore(rangeStart)) {
+            throw new ValidationException("Некорректный промежуток времени. " +
+                    "Дата окончания промежутка раньше, чем начало промежутка.");
         }
 
         eventClient.sendStatistic(request);
@@ -298,8 +293,7 @@ public class DbEventService implements EventService {
      */
     @Override
     public EventFullDto publishEvent(long eventId) {
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("События не существует. Обновление невозможно"));
+        Event event = getEventFromDb(eventId);
         checkEventDate(event.getEventDate(), TIME_BEFORE_PUBLISH);
 
         if (!event.getStatus().equals(EventStatus.PENDING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
@@ -319,8 +313,7 @@ public class DbEventService implements EventService {
      */
     @Override
     public EventFullDto rejectEvent(long eventId) {
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("События не существует. Обновление невозможно"));
+        Event event = getEventFromDb(eventId);
 
         if (!event.getStatus().equals(EventStatus.PENDING) || event.getStatus().equals(EventStatus.PUBLISHED)) {
             throw new ValidationException("Событие уже опубликовано или не ожидает публикации");
@@ -338,19 +331,28 @@ public class DbEventService implements EventService {
      * @return List EventShortDto
      */
     @Override
-    public List<EventShortDto> getUserEventsToSub(long subId, long userId) {
+    public List<EventShortDto> getUserEventsToSub(long subId, long userId, boolean actual) {
         if (!subscribeRepository.existsById(new SubscribeId(userId, subId))) {
             throw new NotFoundException("Вы не являетесь подпищиком пользователя");
         }
+        List<Event> events;
 
-        return eventRepository.findAllToSub(userId, EventStatus.PUBLISHED.toString()).stream()
+        if (actual) {
+            events = eventRepository.findAllToSub(userId, EventStatus.PUBLISHED.toString());
+        } else {
+            events = eventRepository.findAllByCreatorAndStatus(userId, EventStatus.PUBLISHED.toString());
+        }
+
+        return events.stream()
                 .map(eventMapper::toShortEventDto)
                 .collect(Collectors.toList());
     }
 
     /**
      * Метод для получения обновленного объекта Event. Используется для обновления как пользовательских запросов,
-     * так и админских
+     * так и админских.
+     * Метод может обработать eventDto с любой наполняемостью полей объекта, проверка обновляемых полей производиться
+     * индивидуально.
      *
      * @param eventDto Дто объект события с новыми полями
      * @param eventId  Id события
@@ -358,13 +360,13 @@ public class DbEventService implements EventService {
      * @return Event
      */
     private Event updateEventFromDto(RequestEventDto eventDto, long eventId, boolean isUser) {
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("События не существует. Обновление невозможно"));
+        Event event = getEventFromDb(eventId);
 
-        // Пользователь не может обновить уже опубликованное событие
-        // и не может выставить дату начала события раньше 2-ух часов от текущего момента
-        if (isUser && eventDto.getEventDate() != null) {
-            checkEventDate(eventDto.getEventDate(), TIME_BEFORE_CREATE);
+        if (isUser) {
+            if (eventDto.getEventDate() != null) {
+                checkEventDate(eventDto.getEventDate(), TIME_BEFORE_CREATE);
+            }
+
             if (event.getStatus().equals(EventStatus.PUBLISHED)) {
                 throw new ValidationException("Невозможно обновить опубликованное событие");
             }
@@ -383,8 +385,7 @@ public class DbEventService implements EventService {
         }
 
         if (eventDto.getCategory() != 0) {
-            event.setCategory(categoryRepository.findById(eventDto.getCategory()).orElseThrow(
-                    () -> new NotFoundException("Категория не найдена")));
+            event.setCategory(getCategoryFromDb(eventDto.getCategory()));
         }
 
         if (eventDto.getEventDate() != null) {
@@ -396,37 +397,22 @@ public class DbEventService implements EventService {
         }
 
         if (eventDto.getParticipantLimit() != null) {
-            if (eventDto.getParticipantLimit() == 0) {
-                event.setParticipations(List.of());
-                event.setRequestModeration(false);
-            } else if (eventDto.getParticipantLimit() > event.getParticipantLimit()) {
-                event.setParticipantLimit(eventDto.getParticipantLimit());
-            } else if (eventDto.getParticipantLimit() < event.getParticipantLimit()) {
-                event.setParticipantLimit(eventDto.getParticipantLimit());
-
-                // Если количество участников при обновлении уменьшено, то все запросы участия
-                // уходят на новое согласование в не зависимости от необходимости их одобрения
-                try {
-                    participationRepository.changeParticipantsStatusOfEvent(
-                            event.getId(), ParticipantStatus.PENDING.toString());
-                } catch (Exception e) {
-                    log.info("Во время попытки изменить статусы запросов на участие в событии что-то пошло не так" +
-                            e.getMessage());
-                }
-
+            // Если количество участников при обновлении уменьшено, то все запросы участия
+            // уходят на новое согласование в не зависимости от необходимости их одобрения
+            if (eventDto.getParticipantLimit() < event.getParticipantLimit()) {
+                changeParticipantsStatus(event.getId(), ParticipantStatus.REJECTED);
             }
+
+            event.setParticipantLimit(eventDto.getParticipantLimit());
         }
-        // В случае если обновляется модерация в не зависимости true || false, все запросы уходят на пересогласование
-        // требуется повторная отправка запросов (обновление) т.к. их может быть больше лимита
-        // в случае false одобрять сразу все бессмысленно по этой же причине
-        if (eventDto.getRequestModeration() != null && event.getParticipantLimit() > 0) {
+
+        if (eventDto.getRequestModeration() != null && eventDto.getRequestModeration() != event.isRequestModeration()) {
             event.setRequestModeration(eventDto.getRequestModeration());
-            try {
-                participationRepository.changeParticipantsStatusOfEvent(
-                        event.getId(), ParticipantStatus.PENDING.toString());
-            } catch (Exception e) {
-                log.info("Во время попытки изменить статусы запросов на участие в событии что-то пошло не так" +
-                        e.getMessage());
+
+            if (!event.isRequestModeration() && event.getParticipantLimit() == 0) {
+                changeParticipantsStatus(eventId, ParticipantStatus.CONFIRMED);
+            } else {
+                changeParticipantsStatus(event.getId(), ParticipantStatus.REJECTED);
             }
         }
 
@@ -436,6 +422,22 @@ public class DbEventService implements EventService {
         }
 
         return event;
+    }
+
+    /**
+     * Метод изменения статуса всех заявок на участие в событии
+     *
+     * @param eventId id события
+     * @param status  Новый, устанавливаемый статус
+     */
+    private void changeParticipantsStatus(long eventId, ParticipantStatus status) {
+        try {
+            participationRepository.changeParticipantsStatusOfEvent(
+                    eventId, status.toString());
+        } catch (Exception e) {
+            log.info("Во время попытки изменить статусы запросов на участие в событии что-то пошло не так" +
+                    e.getMessage());
+        }
     }
 
     /**
@@ -460,5 +462,20 @@ public class DbEventService implements EventService {
         if (!userRepository.existsById(userId)) {
             throw new ValidationException("Пользователя не существует");
         }
+    }
+
+    private Event getEventFromDb(long eventId) {
+        return eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("События не существует"));
+    }
+
+    private User getUserFromDb(long userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException("Пользователь не найден"));
+    }
+
+    private Category getCategoryFromDb(int categoryId) {
+        return categoryRepository.findById(categoryId).orElseThrow(
+                () -> new NotFoundException("Категория не найдена"));
     }
 }

@@ -85,8 +85,11 @@ public class DbCategoryService implements CategoryService {
 
     @Override
     public CategoryDto getCategory(int catId) {
-        return categoryMapper.toCategoryDto(
-                repository.findById(catId).orElseThrow(
-                        () -> new NotFoundException("Категория не найдена")));
+        return categoryMapper.toCategoryDto(getCategoryFromDb(catId));
+    }
+
+    private Category getCategoryFromDb(int catId) {
+        return repository.findById(catId).orElseThrow(
+                () -> new NotFoundException("Категория не найдена"));
     }
 }

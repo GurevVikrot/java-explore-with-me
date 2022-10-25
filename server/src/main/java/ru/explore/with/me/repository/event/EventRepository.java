@@ -55,7 +55,7 @@ public class EventRepository {
                                       int from,
                                       int size) {
         return eventDAO.findAllToAdmin(users, states, categories, rangeStart, rangeEnd, from, size).stream()
-                .peek((e) -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
+                .peek(e -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -113,7 +113,7 @@ public class EventRepository {
                                        int size) {
         return eventDAO.findAllByFilter(
                         text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size).stream()
-                .peek((e) -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
+                .peek(e -> e.setParticipations(participationRepository.findAllByEventId(e.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -126,5 +126,9 @@ public class EventRepository {
      */
     public List<Event> findAllToSub(long userId, String status) {
         return jpaRepository.findAllToSub(userId, status, LocalDateTime.now());
+    }
+
+    public List<Event> findAllByCreatorAndStatus(long userId, String toString) {
+        return jpaRepository.findAllByCreatorAndStatus(userId, toString);
     }
 }

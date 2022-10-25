@@ -33,4 +33,9 @@ public interface EventJpaRepository extends JpaRepository<Event, Long> {
             "AND e.status = ?2 " +
             "AND e.event_date > ?3", nativeQuery = true)
     List<Event> findAllToSub(long userId, String status, LocalDateTime now);
+
+    @Query(value = "SELECT * FROM events AS e " +
+            "WHERE e.creator = ?1 " +
+            "AND e.status = ?2", nativeQuery = true)
+    List<Event> findAllByCreatorAndStatus(long userId, String toString);
 }

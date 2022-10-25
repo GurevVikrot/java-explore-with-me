@@ -260,8 +260,9 @@ public class UserController {
      */
     @GetMapping("/{subId}/subscribes/{userId}/events")
     public List<EventShortDto> getAuthorEvents(@PathVariable @Positive long subId,
-                                               @PathVariable @Positive long userId) {
+                                               @PathVariable @Positive long userId,
+                                               @RequestParam(required = false, defaultValue = "true") boolean actual) {
         log.info("Запрос получения подпищиком id = {} событий пользователя id = {}", subId, userId);
-        return eventService.getUserEventsToSub(subId, userId);
+        return eventService.getUserEventsToSub(subId, userId, actual);
     }
 }

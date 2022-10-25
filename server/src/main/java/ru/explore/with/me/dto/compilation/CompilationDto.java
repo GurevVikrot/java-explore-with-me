@@ -1,9 +1,6 @@
 package ru.explore.with.me.dto.compilation;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import ru.explore.with.me.dto.event.EventShortDto;
 
 import javax.validation.constraints.NotNull;
@@ -12,10 +9,9 @@ import java.util.List;
 /**
  * Dto объект подборки событий. Используется для ответа
  */
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 @NotNull
 public class CompilationDto {
     private long id;

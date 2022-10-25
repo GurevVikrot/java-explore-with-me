@@ -9,12 +9,10 @@ import java.util.List;
 /**
  * Dto объект для создания новой подборки событий. Заложена валидация.
  */
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 @NotNull
-@ToString
 public class NewCompilationDto {
     @NotBlank
     private String title;

@@ -70,8 +70,7 @@ public class DbParticipationService implements ParticipationService {
         checkUserExist(userId);
         checkEventExist(eventId);
 
-        Participation participation = participationRepository.findById(partId).orElseThrow(
-                () -> new NotFoundException("Заявка на участие не найдена"));
+        Participation participation = getParticipationFromDb(partId);
 
         Event event = participation.getEvent();
         int participantsFact = participationRepository.getSumByEventIdAndStatusIs(
@@ -122,20 +121,18 @@ public class DbParticipationService implements ParticipationService {
      * Если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти
      * в состояние подтвержденного
      *
-     * @param userId
-     * @param eventId
-     * @return
+     * @param userId id пользователя
+     * @param eventId id события
+     * @return ParticipationRequestDto
      */
     @Override
     public ParticipationRequestDto newParticipation(long userId, long eventId) {
         if (participationRepository.existsByUserIdAndEventId(userId, eventId)) {
-            throw new ValidationException("Заявка на участие уже сущесвтует");
+            throw new ValidationException("Заявка на участие уже существует");
         }
 
-        User user = userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException("Пользователь не найден"));
-        Event event = eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("Событие не найдено"));
+        User user = getUserFormDb(userId);
+        Event event = getEventFromDb(eventId);
 
         if (event.getCreator().getId() == userId) {
             throw new ValidationException("Инициатор события не может добавить запрос на участие в своём событии");
@@ -144,7 +141,7 @@ public class DbParticipationService implements ParticipationService {
         } else if (event.getParticipantLimit() >
                 0 && event.getParticipantLimit() == participationRepository.getSumByEventIdAndStatusIs(
                 eventId, ParticipantStatus.CONFIRMED.toString()).orElse(0)) {
-            throw new ValidationException("Лимит запросов на участие привышен");
+            throw new ValidationException("Лимит запросов на участие превышен");
         }
 
         Participation participation = new Participation(
@@ -165,8 +162,7 @@ public class DbParticipationService implements ParticipationService {
     public ParticipationRequestDto cancelParticipation(long userId, long requestId) {
         checkUserExist(userId);
 
-        Participation participation = participationRepository.findById(requestId).orElseThrow(
-                () -> new NotFoundException("Запрос на участие в событии не найден"));
+        Participation participation = getParticipationFromDb(requestId);
 
         if (participation.getUser().getId() != userId) {
             throw new ValidationException("Отменить участие может только владелец запроса");
@@ -183,10 +179,25 @@ public class DbParticipationService implements ParticipationService {
         }
     }
 
+    private User getUserFormDb(long userId) {
+        return userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException("Пользователь не найден"));
+    }
+
+    private Participation getParticipationFromDb(long requestId) {
+        return participationRepository.findById(requestId).orElseThrow(
+                () -> new NotFoundException("Запрос на участие в событии не найден"));
+    }
+
     private void checkEventExist(long eventId) {
         if (!eventRepository.existById(eventId)) {
             throw new NotFoundException("событие не найдено");
         }
+    }
+
+    private Event getEventFromDb(long eventId) {
+        return eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("Событие не найдено"));
     }
 }
 
